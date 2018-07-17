@@ -23,6 +23,7 @@ imgui.ini
 
 # PDFs / AMD repo etc.
 tressfx-reference
+libs/amd_tressfx/src/Shaders
 
 # misc
 src/shaders/generated
