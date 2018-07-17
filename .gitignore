@@ -1,0 +1,30 @@
+bin/*exe
+bin/*dll
+bin/tmp
+
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+Makefile
+# cmake
+
+# bin
+bin/*.sh
+bin/generate_makefile.gcc.bat
+bin/glslcompiler
+
+# apitrace/renderdoc
+*.trace
+*.cap
+
+# models etc. - too big!
+assets
+imgui.ini
+
+# PDFs / AMD repo etc.
+tressfx-reference
+
+# misc
+src/shaders/generated
+# not used ATM
+libs/stb/
