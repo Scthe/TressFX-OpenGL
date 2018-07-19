@@ -10,11 +10,17 @@ SHADER_FILES = [
     'gl-tfx/ppll_build.vert.glsl',
     'gl-tfx/ppll_build.frag.glsl',
     'gl-tfx/ppll_resolve.vert.glsl',
-    'gl-tfx/ppll_resolve.frag.glsl'
+    'gl-tfx/ppll_resolve.frag.glsl',
+    'gl-tfx/sim0_IntegrationAndGlobalShapeConstraints.comp.glsl',
+    'gl-tfx/sim1_VelocityShockPropagation.comp.glsl',
+    'gl-tfx/sim2_LocalShapeConstraints.comp.glsl',
+    'gl-tfx/sim3_LengthConstraintsWindAndCollision.comp.glsl',
+    'gl-tfx/sim4_UpdateFollowHairVertices.comp.glsl'
 ]
 
 INCLUDE_REGEX = '^#pragma include "(.*?)"'
-NVIDIA_ERR_REGEX = '^.*\((.*?)\).+?(e.*)$'
+NVIDIA_ERR_REGEX = '^.*\((.*?)\).:.(.*?) .+?: (.*)$'
+
 
 class Colors:
     BLACK   = '\033[0;{}m'.format(30)
@@ -43,16 +49,22 @@ def process_file(filepath):
 def process_error_line(err_line, shader_lines):
     matches = re.search(NVIDIA_ERR_REGEX, err_line, re.IGNORECASE)
     if matches:
-        line_no, msg = int(matches.group(1)), matches.group(2)
+        line_no, level, msg = int(matches.group(1)), matches.group(2), matches.group(3)
         line = shader_lines[line_no - 1].strip()
-        return '[L{}] {}\n{}  > {}'.format(line_no, msg, Colors.CYAN, line)
+        is_warn = level == 'warning'
+        col = Colors.YELLOW if is_warn else Colors.RED
+        level_str = 'Warn' if is_warn else 'Err'
+
+        print('{}[L{}] {}: {}'.format(col, line_no, level_str, msg))
+        print('{}   > {}{}'.format(Colors.CYAN, line, Colors.WHITE))
     else:
-        return err_line
+        print(err_line)
 
 def test_compile(filepath, shader_lines):
     ret = subprocess.check_output([
-        'bin\glslcompiler\glslcompiler.exe',
-        filepath
+        'bin\glslcompiler\GLSLCompiler.exe',
+        filepath,
+        '-iconic' # 'silences' freeglut window
     ]).decode("utf-8")
     # print(Colors.RED, str(ret), Colors.WHITE)
 
@@ -60,11 +72,10 @@ def test_compile(filepath, shader_lines):
         return True
 
     err_lines = ret.split('\n')
-    print(Colors.RED, err_lines[0], Colors.WHITE)
+    print(Colors.RED, err_lines[0].strip(), Colors.WHITE)
     for line in err_lines[1:]:
-        print(Colors.RED, process_error_line(line, shader_lines), Colors.WHITE)
+        process_error_line(line, shader_lines)
     return False
-
 
 if __name__ == '__main__':
     has_error = False

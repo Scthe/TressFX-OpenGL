@@ -1,3 +1,5 @@
+// unused?
+
 float fLightScale;
 
 float3 AccumulateHairLight(float3 vTangent, float3 vPositionWS, float3 vViewWS, HairShadeParams params, float fExtraAmbientScale = 1)
