@@ -1,5 +1,6 @@
 #include "../../include/pch.hpp"
 #include "TFxHairStrands.hpp"
+#include "print_me.hpp"
 
 #include "../../libs/amd_tressfx/include/AMD_Types.h"
 #include "../../libs/amd_tressfx/include/TressFXCommon.h"
@@ -7,24 +8,12 @@
 #include "GpuInterface/TFxGpuInterface.hpp"
 // #include "../../libs/amd_tressfx/include/TressFXAsset.h"
 #include "../../libs/amd_tressfx/include/TressFXHairObject.h"
+#include "../../libs/amd_tressfx/include/TressFXSimulation.h"
 
 // #include "SuAnimatedModel.h"
 // #include "SkeletonInterface.h"
 // #include "SushiGPUInterface.h"
 
-static void debug_asset(const char*const modelName, const char*const hairObjectName,
-    const AMD::TressFXAsset& asset)
-{
-  LOGD << "TressFXAsset " << modelName << "." << hairObjectName << "{";
-  LOGD << "  m_numTotalStrands: " << asset.m_numTotalStrands;
-  LOGD << "  m_numTotalVertices: " << asset.m_numTotalVertices;
-  LOGD << "  m_numVerticesPerStrand: " << asset.m_numVerticesPerStrand;
-  LOGD << "  m_numGuideStrands: " << asset.m_numGuideStrands;
-  LOGD << "  m_numGuideVertices: " << asset.m_numGuideVertices;
-  LOGD << "  m_numFollowStrandsPerGuide: " << asset.m_numFollowStrandsPerGuide;
-  LOGD << "  has_skeleton: " << (asset.m_boneSkinningData);
-  LOGD << "};";
-}
 
 namespace glTFx {
 
@@ -43,7 +32,6 @@ namespace glTFx {
 
     TressFXHairObject* hairObject = new TressFXHairObject;
     AMD::TressFXAsset* asset = new AMD::TressFXAsset();
-    size_t memOffset = 0;
 
     // Load *.tfx
     // NOTE: asset will be destroyed after we upload data to GPU
@@ -55,7 +43,7 @@ namespace glTFx {
 
     asset->GenerateFollowHairs(numFollowHairsPerGuideHair, tipSeparationFactor, 1.2f);
     asset->ProcessAsset();
-    debug_asset(modelName, hairObjectName, *asset);
+    glTFx::debug::debug_asset(modelName, hairObjectName, *asset);
     LOGD << "Asset processing complete, will create hairObject (hairObject->Create)";
 
     // Load *.tfxbone
@@ -92,26 +80,26 @@ namespace glTFx {
   // <editor-fold skinning&simulation>
 
   void TFxHairStrands::TransitionSimToRendering(EI_CommandContextRef context) {
-      m_pStrands->GetPosTanCollection().TransitionSimToRendering(context);
+    m_pStrands->GetPosTanCollection().TransitionSimToRendering(context);
   }
 
   void TFxHairStrands::TransitionRenderingToSim(EI_CommandContextRef context) {
-      m_pStrands->GetPosTanCollection().TransitionRenderingToSim(context);
+    m_pStrands->GetPosTanCollection().TransitionRenderingToSim(context);
   }
 
   /*
-  void TFxHairStrands::UpdateBones(EI_CommandContextRef context) {
-      const SuArray<SuMatrix4>& boneMatrices = m_pSkeleton->GetSkinningMatrices();
-      const float*              pBoneMatricesInWS = (const float32*)boneMatrices[0];
+  void TFxHairStrands::update_bones(EI_CommandContextRef context) {
+    const SuArray<SuMatrix4>& boneMatrices = m_pSkeleton->GetSkinningMatrices();
+    const float* pBoneMatricesInWS = (const float32*)boneMatrices[0];
 
-      // update bone matrices for bone skinning of first two vertices of hair strands
-      m_pStrands->UpdateBoneMatrices(context, pBoneMatricesInWS, 16 * sizeof(float) * boneMatrices.size());
-  }
-
-  void TFxHairStrands::Simulate(EI_CommandContextRef context, TressFXSimulation* pSimulation) {
-      pSimulation->Simulate(context, *m_pStrands);
+    // update bone matrices for bone skinning of first two vertices of hair strands
+    m_pStrands->UpdateBoneMatrices(context, pBoneMatricesInWS, 16 * sizeof(float) * boneMatrices.size());
   }
   */
+
+  void TFxHairStrands::simulate(EI_CommandContextRef context, TressFXSimulation* pSimulation) {
+    pSimulation->Simulate(context, *m_pStrands);
+  }
   // </editor-fold>
 
 } // namespace glTFx

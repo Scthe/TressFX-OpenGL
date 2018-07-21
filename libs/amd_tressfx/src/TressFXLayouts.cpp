@@ -208,17 +208,17 @@ void CreateGenerateSDFLayout2(EI_Device* pDevice, EI_LayoutManagerRef layoutMana
 void CreateSimLayout2(EI_Device* pDevice, EI_LayoutManagerRef layoutManager)
 {
     // SRVS
-    static const int NUM_SRVS = 7;
+    static const int NUM_SRVS = 5;
     static const EI_StringHash srvSlotNames[NUM_SRVS] =
     {
        TRESSFX_STRING_HASH("g_InitialHairPositions"),
        TRESSFX_STRING_HASH("g_GlobalRotations"),
        //TRESSFX_STRING_HASH("g_LocalRotations"),
        TRESSFX_STRING_HASH("g_HairRestLengthSRV"),
-       TRESSFX_STRING_HASH("g_HairStrandType"),
+       // TRESSFX_STRING_HASH("g_HairStrandType"),
        TRESSFX_STRING_HASH("g_HairRefVecsInLocalFrame"),
        TRESSFX_STRING_HASH("g_FollowHairRootOffset"),
-       TRESSFX_STRING_HASH("g_BoneSkinningData")
+       // TRESSFX_STRING_HASH("g_BoneSkinningData")
         //TRESSFX_STRING_HASH("g_BoneSkinningMatrix")
     };
 

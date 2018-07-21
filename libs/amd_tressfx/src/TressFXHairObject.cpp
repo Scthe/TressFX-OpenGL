@@ -123,10 +123,10 @@ void TressFXHairObject::Create(AMD::TressFXAsset* asset,
 
 
         // strand types
-            mHairStrandTypeBuffer = EI_CreateReadOnlySB(pDevice,
-                                                        sizeof(int),
-                                                        m_NumTotalStrands,
-                                                        TRESSFX_STRING_HASH("StrandType"), name);
+            // mHairStrandTypeBuffer = EI_CreateReadOnlySB(pDevice,
+                                                        // sizeof(int),
+                                                        // m_NumTotalStrands,
+                                                        // TRESSFX_STRING_HASH("StrandType"), name);
 
 
 
@@ -147,7 +147,7 @@ void TressFXHairObject::Create(AMD::TressFXAsset* asset,
 
 
         // bone skinning data
-         mBoneSkinningDataBuffer = EI_CreateReadOnlySB(pDevice, sizeof(AMD::TressFXBoneSkinningData), m_NumTotalStrands, TRESSFX_STRING_HASH("SkinningData"),name);
+         // mBoneSkinningDataBuffer = EI_CreateReadOnlySB(pDevice, sizeof(AMD::TressFXBoneSkinningData), m_NumTotalStrands, TRESSFX_STRING_HASH("SkinningData"),name);
     }
 
     // UPLOAD INITIAL DATA
@@ -160,20 +160,20 @@ void TressFXHairObject::Create(AMD::TressFXAsset* asset,
     InitialDataUpload(commandContext, asset->m_positions, sizeof(AMD::TRESSFX::float4) * m_NumTotalVertice, *mInitialHairPositionsBuffer);
     InitialDataUpload(commandContext, asset->m_globalRotations, sizeof(AMD::TRESSFX::float4) * m_NumTotalVertice, *mGlobalRotationsBuffer);
     InitialDataUpload(commandContext, asset->m_restLengths, sizeof(float) * m_NumTotalVertice, *mHairRestLengthSRVBuffer);
-    InitialDataUpload(commandContext, asset->m_strandTypes, sizeof(int) * m_NumTotalStrands, *mHairStrandTypeBuffer);
+    // InitialDataUpload(commandContext, asset->m_strandTypes, sizeof(int) * m_NumTotalStrands, *mHairStrandTypeBuffer);
     InitialDataUpload(commandContext, asset->m_refVectors, sizeof(AMD::TRESSFX::float4) * m_NumTotalVertice, *mHairRefVecsInLocalFrameBuffer);
     InitialDataUpload(commandContext, asset->m_followRootOffsets, sizeof(AMD::TRESSFX::float4) * m_NumTotalStrands, *mFollowHairRootOffsetBuffer);
-    InitialDataUpload(commandContext, asset->m_boneSkinningData, sizeof(AMD::TressFXBoneSkinningData) * m_NumTotalStrands, *mBoneSkinningDataBuffer);
+    // InitialDataUpload(commandContext, asset->m_boneSkinningData, sizeof(AMD::TressFXBoneSkinningData) * m_NumTotalStrands, *mBoneSkinningDataBuffer);
 
     EI_Barrier copyBarriers[] =
     {
         { mInitialHairPositionsBuffer, EI_STATE_COPY_DEST, EI_STATE_NON_PS_SRV },
         { mGlobalRotationsBuffer, EI_STATE_COPY_DEST, EI_STATE_NON_PS_SRV },
         { mHairRestLengthSRVBuffer, EI_STATE_COPY_DEST, EI_STATE_NON_PS_SRV },
-        { mHairStrandTypeBuffer, EI_STATE_COPY_DEST, EI_STATE_NON_PS_SRV },
+        // { mHairStrandTypeBuffer, EI_STATE_COPY_DEST, EI_STATE_NON_PS_SRV },
         { mHairRefVecsInLocalFrameBuffer, EI_STATE_COPY_DEST, EI_STATE_NON_PS_SRV },
         { mFollowHairRootOffsetBuffer, EI_STATE_COPY_DEST, EI_STATE_NON_PS_SRV },
-        { mBoneSkinningDataBuffer, EI_STATE_COPY_DEST, EI_STATE_NON_PS_SRV }
+        // { mBoneSkinningDataBuffer, EI_STATE_COPY_DEST, EI_STATE_NON_PS_SRV }
     };
     EI_SubmitBarriers(commandContext, AMD_ARRAY_SIZE(copyBarriers), (EI_Barrier*) copyBarriers);
 
@@ -183,15 +183,15 @@ void TressFXHairObject::Create(AMD::TressFXAsset* asset,
     // Bind set
     TressFXBindSet bindSet;
 
-    EI_SRV      SRVs[7];
+    EI_SRV      SRVs[5];
 
     SRVs[0] = EI_GetSRV(mInitialHairPositionsBuffer);
     SRVs[1] = EI_GetSRV(mGlobalRotationsBuffer);
     SRVs[2] = EI_GetSRV(mHairRestLengthSRVBuffer);
-    SRVs[3] = EI_GetSRV(mHairStrandTypeBuffer);
-    SRVs[4] = EI_GetSRV(mHairRefVecsInLocalFrameBuffer);
-    SRVs[5] = EI_GetSRV(mFollowHairRootOffsetBuffer);
-    SRVs[6] = EI_GetSRV(mBoneSkinningDataBuffer);
+    // SRVs[3] = EI_GetSRV(mHairStrandTypeBuffer);
+    SRVs[3] = EI_GetSRV(mHairRefVecsInLocalFrameBuffer);
+    SRVs[4] = EI_GetSRV(mFollowHairRootOffsetBuffer);
+    // SRVs[6] = EI_GetSRV(mBoneSkinningDataBuffer);
 
     bindSet.nSRVs  = AMD_ARRAY_SIZE(SRVs);
     bindSet.nUAVs  = 0;
@@ -229,10 +229,10 @@ void TressFXHairObject::Destroy(EI_Device* pDevice)
     AMD_SAFE_RESOURCE_DELETE(pDevice, mInitialHairPositionsBuffer);
     AMD_SAFE_RESOURCE_DELETE(pDevice, mGlobalRotationsBuffer);
     AMD_SAFE_RESOURCE_DELETE(pDevice, mHairRestLengthSRVBuffer);
-    AMD_SAFE_RESOURCE_DELETE(pDevice, mHairStrandTypeBuffer);
+    // AMD_SAFE_RESOURCE_DELETE(pDevice, mHairStrandTypeBuffer);
     AMD_SAFE_RESOURCE_DELETE(pDevice, mHairRefVecsInLocalFrameBuffer);
     AMD_SAFE_RESOURCE_DELETE(pDevice, mFollowHairRootOffsetBuffer);
-    AMD_SAFE_RESOURCE_DELETE(pDevice, mBoneSkinningDataBuffer);
+    // AMD_SAFE_RESOURCE_DELETE(pDevice, mBoneSkinningDataBuffer);
 
     // destroy shared resources
     mPosTanCollection.Destroy(pDevice);

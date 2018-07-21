@@ -7,12 +7,13 @@
 // #include "SuTypes.h"
 // #include "SuObjectManager.h"
 
-// class TressFXSimulation;
+class TressFXSimulation;
 
 namespace glTFx {
 
   class TFxHairStrands {
     public:
+
     void initialize(
         const char*const modelName,
         const char*const hairObjectName,
@@ -20,21 +21,17 @@ namespace glTFx {
         // const char*const tfxboneFilePath,
         int numFollowHairsPerGuideHair,
         float tipSeparationFactor);
-
     void destroy(EI_Device* pDevice);
+
+    void TransitionSimToRendering(EI_CommandContextRef);
+    void TransitionRenderingToSim(EI_CommandContextRef);
+    // void update_bones(EI_CommandContextRef);
+    void simulate(EI_CommandContextRef, TressFXSimulation*);
 
     TressFXHairHandle get_AMDTressFXHandle() { return m_pStrands; }
 
-
-    void TransitionSimToRendering(EI_CommandContextRef context);
-    void TransitionRenderingToSim(EI_CommandContextRef context);
-    // void UpdateBones(EI_CommandContextRef context);
-    // void Simulate(EI_CommandContextRef context, TressFXSimulation* pSimulation);
-
-
     private:
     TressFXHairObject* m_pStrands = nullptr;
-    // SuAnimatedModel* m_pSkeleton;
   };
 
 } // namespace glTFx

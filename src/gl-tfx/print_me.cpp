@@ -1,5 +1,6 @@
 #include "../../../include/pch.hpp"
 #include "print_me.hpp"
+#include "../../libs/amd_tressfx/include/TressFXAsset.h"
 
 namespace glTFx::debug {
 
@@ -134,6 +135,31 @@ namespace glTFx::debug {
     }
 
     LOGT << "}";
+  }
+
+  void debug_asset(const char*const modelName, const char*const hairObjectName,
+      const AMD::TressFXAsset& asset)
+  {
+    LOGD << "TressFXAsset " << modelName << "." << hairObjectName << "{";
+    LOGD << "  m_numTotalStrands: " << asset.m_numTotalStrands;
+    LOGD << "  m_numTotalVertices: " << asset.m_numTotalVertices;
+    LOGD << "  m_numVerticesPerStrand: " << asset.m_numVerticesPerStrand;
+    LOGD << "  m_numGuideStrands: " << asset.m_numGuideStrands;
+    LOGD << "  m_numGuideVertices: " << asset.m_numGuideVertices;
+    LOGD << "  m_numFollowStrandsPerGuide: " << asset.m_numFollowStrandsPerGuide;
+    LOGD << "  has_skeleton: " << (asset.m_boneSkinningData);
+    LOGD << "};";
+  }
+
+  void debug_shader_texts(const char* preamb, const glUtils::ShaderTexts& st, int logLevel) {
+    auto ll = static_cast<logger::LogLevel>(logLevel);
+    LOG(ll) << preamb << " ("
+         << (st.vertex ? st.vertex : "") << ", "
+         << (st.fragment ? st.fragment : "") << ", "
+         << (st.geometry ? st.geometry : "") << ", "
+         << (st.tessellation_control ? st.tessellation_control : "") << ", "
+         << (st.tessellation_evaluation ? st.tessellation_evaluation : "") << ", "
+         << (st.compute ? st.compute : "") << ")";
   }
 
 }

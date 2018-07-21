@@ -1,11 +1,16 @@
 #version 450
 
 #pragma include "_utils.glsl"
-#pragma include "sim/_SimParams.comp.glsl"
-#pragma include "sim/_SimBuffers.comp.glsl"
+#pragma include "sim/_SimParams.mock.comp.glsl"
+// #pragma include "sim/_SimParams.comp.glsl"
 #pragma include "sim/_SimCommon.comp.glsl"
+#pragma include "sim/_SimBuffers.comp.glsl"
 #pragma include "sim/_SimCapsuleCollision.comp.glsl"
 // #pragma include "sim/_SimQuat.comp.glsl"
+
+shared vec4 sharedPos[THREAD_GROUP_SIZE];
+shared vec4 sharedTangent[THREAD_GROUP_SIZE];
+shared float sharedLength[THREAD_GROUP_SIZE];
 
 vec2 ConstraintMultiplier(vec4 particle0, vec4 particle1) {
   if (IsMovable(particle0)) {
@@ -111,7 +116,8 @@ void main() {
 
   // Compute tangent
   // tangent := normalize(vertex -> next_vertex)
-  vec3 tangent = sharedPos[indexForSharedMem+numOfStrandsPerThreadGroup].xyz - sharedPos[indexForSharedMem].xyz;
+  vec3 tangent = sharedPos[indexForSharedMem + numOfStrandsPerThreadGroup].xyz
+               - sharedPos[indexForSharedMem].xyz;
   g_HairVertexTangents_[globalVertexIndex].xyz = normalize(tangent);
 
   // update global position buffers

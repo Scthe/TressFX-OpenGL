@@ -1,11 +1,23 @@
 // START _SimCommon.glsl
 
-
-// HLSL -> GLSL
+// HLSL -> GLSL notes
 // (from: https://anteru.net/blog/2016/mapping-between-hlsl-and-glsl/index.html)
 //  * SV_DispatchThreadID gl_GlobalInvocationID
 //  * SV_GroupID gl_WorkGroupID
 //  * SV_GroupIndex gl_LocalInvocationIndex
+
+
+// If you change the value below, you must change it in TressFXAsset.h as well.
+#ifndef THREAD_GROUP_SIZE
+#define THREAD_GROUP_SIZE 64
+#endif
+
+// ?Old skinning method?
+#define USE_MESH_BASED_HAIR_TRANSFORM 0
+
+// Toggle capsule collisions
+#define TRESSFX_COLLISION_CAPSULES 0
+
 
 void CalcIndicesInVertexLevelMaster(
   uint local_id, uint group_id,
@@ -28,8 +40,9 @@ void CalcIndicesInVertexLevelMaster(
 }
 
 bool IsMovable(vec4 particle) {
-  if ( particle.w > 0 ){ return true;}
   return false;
+  // if ( particle.w > 0 ){ return true;}
+  // return false;
 }
 
 void CalcIndicesInStrandLevelMaster(

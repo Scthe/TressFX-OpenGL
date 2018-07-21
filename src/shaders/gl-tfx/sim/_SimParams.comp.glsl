@@ -1,20 +1,5 @@
 // START _SimParams.glsl
 
-// If you change the value below, you must change it in TressFXAsset.h as well.
-#ifndef THREAD_GROUP_SIZE
-#define THREAD_GROUP_SIZE 64
-#endif
-
-shared vec4 sharedPos[THREAD_GROUP_SIZE];
-shared vec4 sharedTangent[THREAD_GROUP_SIZE];
-shared float sharedLength[THREAD_GROUP_SIZE];
-
-// ?Old skinning method?
-#define USE_MESH_BASED_HAIR_TRANSFORM 0
-
-// Toggle capsule collisions
-#define TRESSFX_COLLISION_CAPSULES 0
-
 //constants that change frame to frame
 // cbuffer tressfxSimParameters {//: register( b0 )
   uniform vec4 g_Wind;

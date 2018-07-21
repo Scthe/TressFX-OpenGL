@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// Interface to strands of hair.  Both in terms of rendering, and the data 
+// Interface to strands of hair.  Both in terms of rendering, and the data
 // required for simulation.
 // ----------------------------------------------------------------------------
 //
@@ -59,9 +59,9 @@ public:
     void TransitionRenderingToSim(EI_CommandContextRef commandContext);
 
     EI_BindSet& GetSimBindSet() { return *m_pSimBindSets; }
-    EI_BindSet& GetApplySDFBindSet() 
-    { 
-        return *m_pApplySDFBindSets; 
+    EI_BindSet& GetApplySDFBindSet()
+    {
+        return *m_pApplySDFBindSets;
     }
     EI_BindSet& GetRenderBindSet() { return *m_pRenderBindSets; }
 
@@ -111,6 +111,8 @@ public:
     int GetNumTotalHairVertices() { return m_NumTotalVertice; }
     int GetNumTotalHairStrands() { return m_NumTotalStrands; }
     int GetNumVerticesPerStrand() { return m_NumVerticePerStrand; }
+
+    EI_BindSet& GetSimBindSet() { return *m_pSimBindSet; }
 
 private:
     // Turn raw data into GPU resources for rendering.

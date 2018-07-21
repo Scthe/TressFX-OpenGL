@@ -19,9 +19,15 @@
 
 // needed to allocate clear buffer for PPLL heads buffer
 #include "../../../libs/amd_tressfx/include/TressFXPPLL.h"
+// needed to dispatch compute shader
+#include "../../../libs/amd_tressfx/include/TressFXHairObject.h"
+#include "../../../libs/amd_tressfx/include/TressFXLayouts.h"
 
 // typedef SuCommandListPtr   EI_CommandContext;
 
+static std::string SHADER_PATH = "src/shaders/generated/gl-tfx/";
+
+// Callbacks impl:
 EI_Resource::EI_Resource (){}
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -77,13 +83,8 @@ extern "C" {
 } // extern "C"
 #pragma GCC diagnostic warning "-Wunused-parameter"
 
-// TODO this is also a global function
-// void TressFXLogWarning(EI_StringHash warning) {
-  // SuLogWarning(warning);
-// }
 
-
-
+static std::string get_file_contents(const char *filename);
 
 namespace glTFx {
 
@@ -150,4 +151,55 @@ namespace glTFx {
     AMD::g_Callbacks.pfSubmitBarriers = TFx_cbSubmitBarriers; //SuSubmitBarriers;
   }
 
+  void load_tfx_shader (glUtils::Shader& shader, const glUtils::ShaderTexts& filenames) {
+    glTFx::debug::debug_shader_texts("Compiling shader from files", filenames, logger::LogLevel::Trace);
+
+    std::string contents[6];
+    glUtils::ShaderTexts shader_texts;
+
+    #define SET_TEXT(IDX, NAME) \
+      if (filenames.NAME != nullptr) { \
+        contents[IDX] = get_file_contents(filenames.NAME); \
+        shader_texts.NAME = contents[IDX].c_str(); \
+      }
+
+      SET_TEXT(0, vertex);
+      SET_TEXT(1, fragment);
+      SET_TEXT(2, geometry);
+      SET_TEXT(3, tessellation_control);
+      SET_TEXT(4, tessellation_evaluation);
+      SET_TEXT(5, compute);
+    #undef SET_TEXT
+
+    glUtils::ShaderErrorsScratchpad es;
+    shader = glUtils::create_shader(shader_texts, es);
+
+    if (!shader.is_created()) {
+      LOGE << "Shader create error:" << es.msg;
+      glTFx::debug::debug_shader_texts("From files", filenames, logger::LogLevel::Error);
+      GFX_FAIL("Shader compile/link failed, see above for more details");
+    }
+  }
+
+}
+
+// shader load libs:
+#include <fstream>
+#include <cerrno>
+
+std::string get_file_contents(const char *filename) {
+  std::string full_path = SHADER_PATH + filename;
+  std::ifstream in(full_path, std::ios::in | std::ios::binary);
+  if (in) {
+    std::string contents;
+    in.seekg(0, std::ios::end);
+    contents.resize(in.tellg());
+    in.seekg(0, std::ios::beg);
+    in.read(&contents[0], contents.size());
+    in.close();
+    return contents;
+  } else {
+    LOGE << "Error reading file content: '" << filename << "'";
+    throw(errno);
+  }
 }

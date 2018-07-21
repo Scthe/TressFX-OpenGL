@@ -105,11 +105,9 @@ namespace glTFx {
     LOGI << "PPLL pass1 complete, will do pass2 (fullscreen pass)";
 
     // build ppll cleanup
-    // TODO move this to a clear "after all pos and tan usage by rendering" place.
-    // for (size_t i = 0; i < hairStrands.size(); i++){
-      // hairStrands[i]->TransitionRenderingToSim(commandContext);
-    // }
-    // LOGW << "TransitionRenderingToSim executed, where it is reversed?";
+    for (size_t i = 0; i < hairStrands.size(); i++){
+      hairStrands[i]->TransitionRenderingToSim(commandContext);
+    }
 
     // draw ppll
     glUseProgram(m_pReadPSO.shader->gl_id);

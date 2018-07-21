@@ -1,21 +1,60 @@
-static ShaderResource get_resource (glUtils::Shader* shader, glUtils::ShaderResourceName name, bool is_ubo) {
-  ShaderResource res;
-  res.name = name;
+static bool get_resource (glUtils::Shader* shader,
+  const glUtils::ShaderResourceName name, ShaderResource& out)
+{
+  bool found = false;
+  bool is_ubo = false; // all are ssbo
 
   auto block_p = shader->get_block(name, is_ubo);
   if (block_p) {
-    res.is_block = true;
-    res.block = block_p;
-    res.shader = shader;
+    out.is_block = true;
+    out.block = block_p;
+    out.shader = shader;
+    found = true;
   } else {
     auto var_p = shader->get_uniform(name);
     if (var_p) {
-      res.is_block = false;
-      res.variable = var_p;
-      res.shader = shader;
+      out.is_block = false;
+      out.variable = var_p;
+      out.shader = shader;
+      found = true;
     }
   }
+  return found;
+}
+
+static ShaderResource get_resource_from_one_of_shaders (
+  const std::vector<ShaderMetadata>& shaders,
+  const glUtils::ShaderResourceName& name)
+{
+  ShaderResource res;
+  res.name = name;
+
+  for (size_t i = 0; i < shaders.size(); i++) {
+    if (get_resource(shaders[i].shader, name, res)) {
+      break;
+    }
+  }
+
   return res;
+}
+
+static const glUtils::ShaderVariable* get_uniform_from_one_of_shaders (
+  const std::vector<ShaderMetadata>& shaders,
+  const glUtils::ShaderResourceName& name)
+{
+  for (size_t i = 0; i < shaders.size(); i++) {
+    auto uni = shaders[i].shader->get_uniform(name);
+    if (uni) {
+      return uni;
+    }
+  }
+
+  return nullptr;
+}
+
+static void validate_shader_metadata (const ShaderMetadata& smd) {
+  GFX_FAIL_IF(!smd.shader, "Layout manager should contain pointer to shader,"
+    " was nullptr for shaders program that uses", smd.path_1);
 }
 
 EI_BindLayout* TFx_cbCreateLayout(EI_Device* pDevice, EI_LayoutManagerRef layoutManager,
@@ -25,49 +64,52 @@ EI_BindLayout* TFx_cbCreateLayout(EI_Device* pDevice, EI_LayoutManagerRef layout
        << ", nUAVs=" << description.nUAVs
        << ", nConstants=" << description.constants.nConstants << ")";
   glTFx::debug::debug_layout(description);
-  glTFx::debug::debug_shader(*layoutManager.shader);
+  for (const auto& l : layoutManager.shaders) {
+    validate_shader_metadata(l);
+    glTFx::debug::debug_shader(*l.shader);
+  }
+
+  const ShaderMetadata& shader_to_print_debug = layoutManager.shaders[0];
 
   // NOTE: we use SSBO everywhere
   EI_BindLayout* pLayout = new EI_BindLayout;
-  auto pEffect = layoutManager.shader;
-  GFX_FAIL_IF(!pEffect, "Layout manager should contain pointer to shader, was nullptr");
-  bool allow_ubo = false;
+
 
   for (int i = 0; i < description.nSRVs; ++i) {
     const auto& name = description.srvNames[i];
-    ShaderResource res = get_resource(pEffect, name, allow_ubo);
+    ShaderResource res = get_resource_from_one_of_shaders(layoutManager.shaders, name);
     // we have to push_back, as during bind we do not connect based on names,
     // but indices. Skipping push_back would shift indices.
     // Fortunatelly, ShaderResource#was_found_in_glsl exists
     pLayout->srvs.push_back(res);
     if (!res.shader) {
       LOGW << "Could not find SRV(SSBO): " << name
-      << " in Shader(vs=" << layoutManager.vs_path << ", ps=" << layoutManager.fs_path << ")";
+           << " during evaluation of shaders: [" << shader_to_print_debug.path_1 << ", ... ]";
     }
   }
 
   for (int i = 0; i < description.nUAVs; ++i) {
     const auto& name = description.uavNames[i];
-    ShaderResource res = get_resource(pEffect, name, allow_ubo);
+    ShaderResource res = get_resource_from_one_of_shaders(layoutManager.shaders, name);
     // we have to push_back, as during bind we do not connect based on names,
     // but indices. Skipping push_back would shift indices.
     // Fortunatelly, ShaderResource#was_found_in_glsl exists
     pLayout->uavs.push_back(res);
     if (!res.shader) {
       LOGW << "Could not find UAV(SSBO): " << name
-           << " in Shader(vs=" << layoutManager.vs_path << ", ps=" << layoutManager.fs_path << ")";
+           << " during evaluation of shaders: [" << shader_to_print_debug.path_1 << ", ... ]";
     }
   }
 
   const auto& consts = description.constants;
   for (int i = 0; i < consts.nConstants; i++) {
     const auto& name = consts.parameterNames[i];
-    auto var_p = pEffect->get_uniform(name);
+    auto var_p = get_uniform_from_one_of_shaders(layoutManager.shaders, name);
     if (var_p) {
       pLayout->constants.push_back(var_p);
     } else {
       LOGW << "Could not find Uniform: " << name
-           << " in Shader(vs=" << layoutManager.vs_path << ", ps=" << layoutManager.fs_path << ")";
+           << " during evaluation of shaders: [" << shader_to_print_debug.path_1 << ", ... ]";
     }
   }
 

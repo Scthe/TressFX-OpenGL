@@ -90,15 +90,20 @@ struct GlobalState;
 class EI_CommandContext { // ID3D11DeviceContext
   public:
   GlobalState* state = nullptr;
+  TressFXHairObject* simulated_hair_object = nullptr;
 };
 
 class EI_Device {};
 
+struct ShaderMetadata {
+  glUtils::Shader* shader = nullptr;
+  std::string path_1; // vertex/compute shader
+  std::string path_2; // fragment shader
+};
+
 class EI_LayoutManager {
   public:
-  glUtils::Shader* shader = nullptr;
-  std::string vs_path;
-  std::string fs_path;
+  std::vector<ShaderMetadata> shaders;
 };
 
 class EI_BindSet {
@@ -132,8 +137,9 @@ class EI_IndexBuffer {
 
 namespace glTFx {
 
-  EI_Device* GetDevice ();
+  EI_Device* GetDevice();
   EI_CommandContextRef GetContext();
+  void load_tfx_shader (glUtils::Shader&, const glUtils::ShaderTexts& filenames);
 
   /** Has to be called during init somehow */
   void init_TFx_callbacks();

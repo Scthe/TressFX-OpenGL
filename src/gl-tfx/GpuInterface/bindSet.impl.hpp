@@ -15,11 +15,11 @@ EI_BindSet* TFx_cbCreateBindSet(EI_Device* commandContext, AMD::TressFXBindSet& 
   pBindSet->values = bindSet.values;
 
   for (int i = 0; i < bindSet.nSRVs; ++i) {
-      pBindSet->srvs.push_back(bindSet.srvs[i]);
+    pBindSet->srvs.push_back(bindSet.srvs[i]);
   }
 
   for (int i = 0; i < bindSet.nUAVs; ++i) {
-      pBindSet->uavs.push_back(bindSet.uavs[i]);
+    pBindSet->uavs.push_back(bindSet.uavs[i]);
   }
 
   return pBindSet;
@@ -72,7 +72,6 @@ static void bind (const EI_Resource& resource_instance, ShaderResource& resource
       bind_ClearableTexture2D(resource_instance, resource_glsl);
       break;
     case TFx_ResourceType::StructuredBufferRW_WithAtomicCounter: {
-      // u32 atomic_uint_size = sizeof(GLuint);
       // bind SSBO
       bind_buffer_to_ssbo(resource_instance.name, resource_instance.buffer_with_counter.buffer, resource_glsl);
       // bind atomic
@@ -162,7 +161,8 @@ void TFx_cbBind(EI_CommandContextRef commandContext, EI_BindLayout* pLayout, EI_
     bind(bind_item, layout_item);
   }
 
-  update_constants(pLayout->constants, (char*)set.values, set.nBytes);
+  LOGW << "Skip update_constants, cause we hardcode everything";
+  // update_constants(pLayout->constants, (char*)set.values, set.nBytes);
 }
 
 

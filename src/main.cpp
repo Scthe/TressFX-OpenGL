@@ -72,8 +72,8 @@ void perf_test_draw () {
 
 int main(int argc, char *argv[]) {
   // logger::Log::ReportingLevel = logger::Trace;
-  // logger::Log::ReportingLevel = logger::Warning;
-  logger::Log::ReportingLevel = logger::Error;
+  logger::Log::ReportingLevel = logger::Warning;
+  // logger::Log::ReportingLevel = logger::Error;
 
   GlobalState state;
 
@@ -101,6 +101,12 @@ int main(int argc, char *argv[]) {
   glClearStencil(0);
   // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   // tfx_sample.draw_hair();
+  // LOGE << "-------- DRAW DONE --------";
+  // glUseProgram(0);
+  // TODO bind simulation settings?
+  // tfx_sample.simulate(0.0);
+  // LOGE << "-------- SIMULATE DONE --------";
+  // tfx_sample.wait_simulate_done();
   // SDL_GL_SwapWindow(window.sdl_window);
   // LOGI << "TFxSample::draw finished!";
   // system("pause"); state.running = false;
@@ -113,8 +119,6 @@ int main(int argc, char *argv[]) {
   // create_shader(bg_shader, state.bg_vs, state.bg_fs);
 
   imgui_init(window);
-
-  // TODO check write mask?
 
 
   while(state.running) {
@@ -141,9 +145,9 @@ int main(int argc, char *argv[]) {
 
     // perf_test_draw();
 
+    tfx_sample.simulate(0.0);
+    tfx_sample.wait_simulate_done();
     tfx_sample.draw_hair();
-    // glFlush();
-    // glFinish();
 
     // ui
     state.update_draw_params(clean_params);

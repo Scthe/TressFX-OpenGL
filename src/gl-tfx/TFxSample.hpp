@@ -12,7 +12,6 @@
 #include "include_TFx_pls_no_warnings.hpp"
 #include "../../libs/amd_tressfx/include/TressFXAsset.h"
 #include "../../libs/amd_tressfx/include/TressFXGPUInterface.h"
-#include "../../libs/amd_tressfx/include/TressFXSDFCollision.h"
 #include "../../libs/amd_tressfx/include/TressFXSettings.h"
 
 #include <vector>
@@ -27,7 +26,7 @@ namespace glTFx {
   class TFxPPLL;
   class TFxShortCut;
   class TFxHairStrands;
-  // class Simulation;
+  class TFxSimulation;
 
   /*
   class EI_Resource;
@@ -49,33 +48,38 @@ namespace glTFx {
     // has hardcoded list of resources. other name: load_tfx_assets
     void init();
 
+    // render
     void draw_hair();
     // void draw_hair_shadows();
 
-    // int       GetNumTressFXObjects() { return static_cast<int>(m_hairStrands.size()); }
-    // SuObject* GetTressFXObject(int index);
+    // simulation
+    void simulate(double fTime);
+    void wait_simulate_done();
+    // void draw_collision_mesh();
 
 
     private:
+
     // values from GUI etc.
     GlobalState* app_state = nullptr;
 
     // hair strands collection - important!
     std::vector<TFxHairStrands*> m_hairStrands;
 
+    // OIT
     TFxPPLL* m_pPPLL = nullptr;
-    TFxShortCut* m_pShortCut = nullptr;
-    // Simulation* m_pSimulation;
-
+    // TFxShortCut* m_pShortCut = nullptr;
     // Views for back and depth buffer created in Normal.lua
     // SuGPURenderableResourceViewPtr   m_pShortCutBackBufferView;
     // SuGPUDepthStencilResourceViewPtr m_pShortCutDepthBufferView;
 
+    // Sim
+    TFxSimulation* m_pSimulation = nullptr;
+
+    // size of PPLL SSBO: PPLLNode[m_nPPLLNodes]
     int m_nPPLLNodes = 0;
 
-    // Need to handle these better.
-    void load_shaders(); // load_effects
-    void unload_shaders(); // unload_effects
+    // shaders
     // SuEffectPtr m_pHairStrandsEffect = nullptr; // oHair.sufx
     // (fill linked list)
     glUtils::Shader m_shaderPPLL_build;
@@ -83,12 +87,13 @@ namespace glTFx {
     // (render fullscreen quad)
     glUtils::Shader m_shaderPPLL_resolve;
 
-
     // SuCountedPtr<SuGPUResource> m_pHairColorTexture;
 
+    // Impl:
+    void load_shaders(); // load_effects
+    void unload_shaders(); // unload_effects
     void initialize_layouts();
     void destroy_layouts();
-
   };
 
-} // namespace glTfx
+} // namespace glTFx

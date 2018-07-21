@@ -1,9 +1,10 @@
 #version 450
 
 #pragma include "_utils.glsl"
-#pragma include "sim/_SimParams.comp.glsl"
-#pragma include "sim/_SimBuffers.comp.glsl"
+#pragma include "sim/_SimParams.mock.comp.glsl"
+// #pragma include "sim/_SimParams.comp.glsl"
 #pragma include "sim/_SimCommon.comp.glsl"
+#pragma include "sim/_SimBuffers.comp.glsl"
 #pragma include "sim/_SimQuat.comp.glsl"
 
 // Compute shader to maintain the local shape constraints.

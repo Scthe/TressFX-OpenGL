@@ -1,5 +1,7 @@
 #include "GpuInterface/TFxGpuInterface.hpp"
 
+namespace AMD { class TressFXAsset; }
+
 namespace glTFx::debug {
 
   void debug_bindSet (const AMD::TressFXBindSet&);
@@ -11,5 +13,7 @@ namespace glTFx::debug {
   void debug_shader(const glUtils::Shader&);
   void debug_StructuredBuffer(const char* fnName, const EI_StringHash resourceName,
       const AMD::uint32 structSize, const AMD::uint32 structCount);
-
+  void debug_asset(const char*const modelName, const char*const hairObjectName,
+      const AMD::TressFXAsset& asset);
+  void debug_shader_texts(const char* preamb, const glUtils::ShaderTexts&, int logLevel);
 }

@@ -7,12 +7,9 @@
 #include "TFxPPLL.hpp"
 // #include "TFxShortcut.hpp"
 #include "TFxHairStrands.hpp"
+#include "TFxSimulation.hpp"
 #include "GpuInterface/TFxGpuInterface.hpp"
 #include "../State.hpp"
-
-// shader load libs:
-#include <fstream>
-#include <cerrno>
 
 // #include "SuLog.h"
 // #include "SuString.h"
@@ -25,7 +22,6 @@
 // #include "SushiGPUInterface.h"
 
 
-static std::string SHADER_PATH = "src/shaders/generated/gl-tfx/";
 static auto PPLL_BUILD_VS_PATH = "ppll_build.vert.glsl";
 static auto PPLL_BUILD_FS_PATH = "ppll_build.frag.glsl";
 static auto PPLL_RESOLVE_VS_PATH = "ppll_resolve.vert.glsl";
@@ -58,16 +54,19 @@ namespace glTFx {
     }
 
     if (m_pPPLL) {
-        m_pPPLL->shutdown(pDevice);
-        delete m_pPPLL;
+      m_pPPLL->shutdown(pDevice);
+      delete m_pPPLL;
     }
     // if (m_pShortCut) {
         // m_pShortCut->shutdown(pDevice);
         // delete m_pShortCut;
     // }
-
     // m_pShortCutBackBufferView = SuGPURenderableResourceViewPtr(0);
     // m_pShortCutDepthBufferView = SuGPUDepthStencilResourceViewPtr(0);
+
+    if (m_pSimulation) {
+      delete m_pSimulation;
+    }
 
     this->destroy_layouts();
     this->unload_shaders();
@@ -96,6 +95,8 @@ namespace glTFx {
           m_nPPLLNodes, PPLL_NODE_SIZE,
           &m_shaderPPLL_build, &m_shaderPPLL_resolve);
     }
+
+    m_pSimulation = new TFxSimulation;
 
     // load hair strands
     m_hairStrands.push_back(new TFxHairStrands);
@@ -148,6 +149,24 @@ namespace glTFx {
   */
   // </editor-fold>
 
+
+  // <editor-fold simulation>
+  void TFxSample::simulate(double fTime) {
+    // TODO provide sim_parameters?
+    // hairMohawk->GetTressFXHandle()->UpdateSimulationParameters(mohawkParameters);
+    // hairShort->GetTressFXHandle()->UpdateSimulationParameters(shortHairParameters);
+    m_pSimulation->start_simulation(fTime, m_hairStrands);
+  }
+
+  void TFxSample::wait_simulate_done() {
+    m_pSimulation->wait_on_simulation();
+  }
+
+  // void TressFXSample::draw_collision_mesh() {
+    // Just draw collision spheres/meshes
+  // }
+  // </editor-fold>
+
   // <editor-fold layouts>
   void TFxSample::initialize_layouts() {
     // See TressFXLayouts.h
@@ -161,7 +180,8 @@ namespace glTFx {
 
     // Each of these will call g_callback: CreateLayout (TressFXLayoutDescription)
     // EI_LayoutManagerRef renderStrandsLayoutManager = GetLayoutManagerRef(m_pHairStrandsEffect);
-    EI_LayoutManager renderStrandsLayoutManager = {&this->m_shaderPPLL_build, PPLL_BUILD_VS_PATH, PPLL_BUILD_FS_PATH};
+    EI_LayoutManager renderStrandsLayoutManager;
+    renderStrandsLayoutManager.shaders.push_back({&this->m_shaderPPLL_build, PPLL_BUILD_VS_PATH, PPLL_BUILD_FS_PATH});
     CreateRenderPosTanLayout2(pDevice, renderStrandsLayoutManager);
     CreateRenderLayout2(pDevice, renderStrandsLayoutManager);
     CreatePPLLBuildLayout2(pDevice, renderStrandsLayoutManager);
@@ -169,7 +189,8 @@ namespace glTFx {
     CreateShortCutFillColorsLayout2(pDevice, renderStrandsLayoutManager);
 
     // EI_LayoutManagerRef readLayoutManager = GetLayoutManagerRef(m_pHairResolveEffect);
-    EI_LayoutManager readLayoutManager = {&this->m_shaderPPLL_resolve, PPLL_RESOLVE_VS_PATH, PPLL_RESOLVE_FS_PATH};
+    EI_LayoutManager readLayoutManager;
+    readLayoutManager.shaders.push_back({&this->m_shaderPPLL_resolve, PPLL_RESOLVE_VS_PATH, PPLL_RESOLVE_FS_PATH});
     CreatePPLLReadLayout2(pDevice, readLayoutManager);
     CreateShortCutResolveDepthLayout2(pDevice, readLayoutManager);
     CreateShortCutResolveColorLayout2(pDevice, readLayoutManager);
@@ -186,54 +207,21 @@ namespace glTFx {
   // </editor-fold>
 
   // <editor-fold effects>
-  static std::string get_file_contents(const char *filename) {
-    std::string full_path = SHADER_PATH + filename;
-    std::ifstream in(full_path, std::ios::in | std::ios::binary);
-    if (in) {
-      std::string contents;
-      in.seekg(0, std::ios::end);
-      contents.resize(in.tellg());
-      in.seekg(0, std::ios::beg);
-      in.read(&contents[0], contents.size());
-      in.close();
-      return contents;
-    } else {
-      LOGE << "Error reading file content: '" << filename << "'";
-      throw(errno);
-    }
-  }
-
-  static void create_shader (glUtils::Shader& shader, const std::string& f_vs, const std::string& f_ps) {
-    glUtils::ShaderTexts shader_texts;
-    auto vs = get_file_contents(f_vs.c_str());
-    auto fs = get_file_contents(f_ps.c_str());
-    shader_texts.vertex = vs.c_str();
-    shader_texts.fragment = fs.c_str();
-
-    LOGT << "Compiling shader from files: vs='" << f_vs << "', ps='" << f_ps << "'";
-
-    glUtils::ShaderErrorsScratchpad es;
-    shader = glUtils::create_shader(shader_texts, es);
-    if (!shader.is_created()) {
-      LOGE << "Shader create error: " << es.msg;
-      GFX_FAIL("Could not create TFx shader [",
-        f_vs.c_str(), ", ", f_ps.c_str(),
-      "]");
-    }
-  }
-
   void TFxSample::load_shaders() {
-    create_shader(this->m_shaderPPLL_build, PPLL_BUILD_VS_PATH, PPLL_BUILD_FS_PATH);
-    create_shader(this->m_shaderPPLL_resolve, PPLL_RESOLVE_VS_PATH, PPLL_RESOLVE_FS_PATH);
-    // m_pHairStrandsEffect = SuEffectManager::GetRef().LoadEffect("oHair.sufx");
-    // m_pHairResolveEffect = SuEffectManager::GetRef().LoadEffect("qHair.sufx");
+    glUtils::ShaderTexts build_paths;
+    build_paths.vertex = PPLL_BUILD_VS_PATH;
+    build_paths.fragment = PPLL_BUILD_FS_PATH;
+    load_tfx_shader(this->m_shaderPPLL_build, build_paths);
+
+    glUtils::ShaderTexts resolve_paths;
+    resolve_paths.vertex = PPLL_RESOLVE_VS_PATH;
+    resolve_paths.fragment = PPLL_RESOLVE_FS_PATH;
+    load_tfx_shader(this->m_shaderPPLL_resolve, resolve_paths);
   }
 
   void TFxSample::unload_shaders() {
     glUtils::destroy(this->m_shaderPPLL_build);
     glUtils::destroy(this->m_shaderPPLL_resolve);
-    // m_pHairStrandsEffect = SuEffectPtr(0);
-    // m_pHairResolveEffect = SuEffectPtr(0);
   }
   // </editor-fold>
 
