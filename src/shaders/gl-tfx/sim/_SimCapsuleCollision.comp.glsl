@@ -6,7 +6,7 @@ struct CollisionCapsule {
 };
 
 // Resolve hair vs capsule collisions. To use this, set TRESSFX_COLLISION_CAPSULES to 1 in both hlsl and cpp sides.
-bool ResolveCapsuleCollisions(inout vec4 curPosition, vec4 oldPos, float friction = 0.4f) {
+bool ResolveCapsuleCollisions(inout vec4 curPosition, vec4 oldPos, float friction/* = 0.4f*/) {
   bool bAnyColDetected = false;
 
 #if TRESSFX_COLLISION_CAPSULES
@@ -37,7 +37,7 @@ bool ResolveCapsuleCollisions(inout vec4 curPosition, vec4 oldPos, float frictio
 }
 
 //  Moves the position based on collision with capsule
-bool CapsuleCollision(vec4 curPosition, vec4 oldPosition, inout vec3 newPosition, CollisionCapsule cc, float friction = 0.4f) {
+bool CapsuleCollision(vec4 curPosition, vec4 oldPosition, inout vec3 newPosition, CollisionCapsule cc, float friction/* = 0.4f*/) {
     const float radius0 = cc.p0.w;
     const float radius1 = cc.p1.w;
 	newPosition = curPosition.xyz;

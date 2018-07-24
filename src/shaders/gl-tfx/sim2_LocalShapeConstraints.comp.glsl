@@ -54,7 +54,7 @@ void main() {
       vec3 orgPos_i_plus_1_InGlobalFrame = MultQuaternionAndVector(rotGlobalWorld, orgPos_i_plus_1_InLocalFrame_i)
                 + pos.xyz;
       // 4) delta where it would be if followed RefVecs (so very hard constraint
-      //    to follow shape of the strand) and actual position after skinning,
+      //    to follow shape of the strand) and actual position after
       //    gravity, shock propagation etc.
       vec3 del = stiffnessForLocalShapeMatching * (orgPos_i_plus_1_InGlobalFrame - pos_plus_one.xyz).xyz;
       // 5) apply to go back to local shape

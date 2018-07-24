@@ -72,8 +72,8 @@ void perf_test_draw () {
 
 int main(int argc, char *argv[]) {
   // logger::Log::ReportingLevel = logger::Trace;
-  logger::Log::ReportingLevel = logger::Warning;
-  // logger::Log::ReportingLevel = logger::Error;
+  // logger::Log::ReportingLevel = logger::Warning;
+  logger::Log::ReportingLevel = logger::Error;
 
   GlobalState state;
 
@@ -156,6 +156,8 @@ int main(int argc, char *argv[]) {
 
     // swap
     SDL_GL_SwapWindow(window.sdl_window);
+
+    // state.running = false;
   }
 
   // Cleanup

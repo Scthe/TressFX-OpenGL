@@ -8,8 +8,6 @@
 #pragma include "sim/_SimQuat.comp.glsl"
 
 shared vec4 sharedPos[THREAD_GROUP_SIZE];
-shared vec4 sharedTangent[THREAD_GROUP_SIZE];
-shared float sharedLength[THREAD_GROUP_SIZE];
 
 // Uses Verlet integration to calculate the new position for the current time step
 vec4 Integrate(
@@ -56,53 +54,54 @@ vec3 ApplyVertexBoneSkinning(vec3 vertexPos, inout vec4 bone_quat) {
 //
 layout (local_size_x = THREAD_GROUP_SIZE) in; // [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void main() {
-  uint globalStrandIndex, localStrandIndex, globalVertexIndex, localVertexIndex, numVerticesInTheStrand, indexForSharedMem, strandType;
-  CalcIndicesInVertexLevelMaster(gl_LocalInvocationIndex, gl_WorkGroupID.x, globalStrandIndex, localStrandIndex, globalVertexIndex, localVertexIndex, numVerticesInTheStrand, indexForSharedMem, strandType);
+  uint numVerticesInTheStrand; // 32
+  PerVertexData vertData = GetPerVertexData(gl_LocalInvocationIndex, gl_WorkGroupID.x, numVerticesInTheStrand);
 
   // Apply bone skinning to initial position
   // BoneSkinningData skinningData = g_BoneSkinningData[globalStrandIndex];
   vec4 bone_quat;
-  vec4 initialPos = g_InitialHairPositions_[globalVertexIndex]; // rest position
+  vec4 initialPos = g_InitialHairPositions_[vertData.vertexId_global]; // rest position
   initialPos.xyz = ApplyVertexBoneSkinning(initialPos.xyz, /*skinningData,*/ bone_quat);
   // we temporarily use g_HairVertexTangents to hold bone quaternion data compute in ApplyVertexBoneSkinning.
-  g_HairVertexTangents_[globalStrandIndex] = bone_quat;
+  g_HairVertexTangents_[vertData.strandId_global] = bone_quat;
 
   // position when this step starts. In other words, a position from the last step.
-  vec4 currentPos = sharedPos[indexForSharedMem] = g_HairVertexPositions_[globalVertexIndex];
+  vec4 currentPos = sharedPos[vertData.localId] = g_HairVertexPositions_[vertData.vertexId_global];
 
-  groupMemoryBarrier(); // GroupMemoryBarrierWithGroupSync();
+  GroupMemoryBarrierWithGroupSync();
+
 
   // Integrate
-  vec4 oldPos = g_HairVertexPositionsPrev_[globalVertexIndex];
+  vec4 oldPos = g_HairVertexPositionsPrev_[vertData.vertexId_global];
   vec4 force = vec4(0, 0, 0, 0);
   if (IsMovable(currentPos)){
-    float damping = GetDamping(strandType); // 1.0f;
-    sharedPos[indexForSharedMem] = Integrate(
+    float damping = GetDamping(vertData.strandType); // 1.0f;
+    sharedPos[vertData.localId] = Integrate(
       currentPos, oldPos, initialPos,
       force, damping,
-      globalVertexIndex, localVertexIndex, numVerticesInTheStrand);
+      vertData.vertexId_global, vertData.vertexId, numVerticesInTheStrand);
   } else {
-    sharedPos[indexForSharedMem] = initialPos;
+    sharedPos[vertData.localId] = initialPos;
   }
 
   // Global Shape Constraints
   // (Calc delta to initial position and move in that direction)
-  float stiffnessForGlobalShapeMatching = GetGlobalStiffness(strandType);
-  float globalShapeMatchingEffectiveRange = GetGlobalRange(strandType);
+  float stiffnessForGlobalShapeMatching = GetGlobalStiffness(vertData.strandType);
+  float globalShapeMatchingEffectiveRange = GetGlobalRange(vertData.strandType);
   bool hasStiffness = stiffnessForGlobalShapeMatching > 0;// && globalShapeMatchingEffectiveRange;
-  bool isMovable_tmp = IsMovable(sharedPos[indexForSharedMem]);
-  bool closeEnoughToRoot = float(localVertexIndex) < globalShapeMatchingEffectiveRange * float(numVerticesInTheStrand);
+  bool isMovable_tmp = IsMovable(sharedPos[vertData.localId]);
+  bool closeEnoughToRoot = float(vertData.vertexId) < globalShapeMatchingEffectiveRange * float(numVerticesInTheStrand);
 
   if (hasStiffness && isMovable_tmp && closeEnoughToRoot) {
     float factor = stiffnessForGlobalShapeMatching;
-    vec3 del = factor * (initialPos - sharedPos[indexForSharedMem]).xyz;
-    sharedPos[indexForSharedMem].xyz += del;
+    vec3 del = factor * (initialPos - sharedPos[vertData.localId]).xyz;
+    sharedPos[vertData.localId].xyz += del;
   }
 
   // update global position buffers
   UpdateFinalVertexPositions(
-    currentPos, sharedPos[indexForSharedMem],
-    globalVertexIndex, localVertexIndex, numVerticesInTheStrand
+    currentPos, sharedPos[vertData.localId],
+    vertData.vertexId_global, vertData.vertexId, numVerticesInTheStrand
   );
 }
 
