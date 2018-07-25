@@ -1,5 +1,6 @@
 #include "../../../include/pch.hpp"
 #include "print_me.hpp"
+#include "TFxSettings.hpp"
 #include "../../libs/amd_tressfx/include/TressFXAsset.h"
 
 namespace glTFx::debug {
@@ -137,10 +138,10 @@ namespace glTFx::debug {
     LOGT << "}";
   }
 
-  void debug_asset(const char*const modelName, const char*const hairObjectName,
+  void debug_asset(const char*const hairObjectName,
       const AMD::TressFXAsset& asset)
   {
-    LOGD << "TressFXAsset " << modelName << "." << hairObjectName << "{";
+    LOGD << "TressFXAsset " << hairObjectName << "{";
     LOGD << "  m_numTotalStrands: " << asset.m_numTotalStrands;
     LOGD << "  m_numTotalVertices: " << asset.m_numTotalVertices;
     LOGD << "  m_numVerticesPerStrand: " << asset.m_numVerticesPerStrand;
@@ -162,4 +163,44 @@ namespace glTFx::debug {
          << (st.compute ? st.compute : "") << ")";
   }
 
+  void debug_settings(TFxSettings& settings) {
+    auto& sim_settings = settings.simulation_settings;
+
+    #define PRINT_PROP(PREAMB, PARENT, NAME) \
+      (PREAMB) << (#NAME) << ": " << (PARENT).NAME << "\n"
+    #define PRINT_PROP_v3(PREAMB, PARENT, NAME) \
+      (PREAMB) << (#NAME) << ": [" \
+          << (PARENT).NAME[0] << ", " \
+          << (PARENT).NAME[1] << ", " \
+          << (PARENT).NAME[2] << "]\n"
+
+    LOGE << "TFxSettings {\n"
+         << PRINT_PROP("  ", settings, filepath)
+         << PRINT_PROP("  ", settings, follow_hairs_per_guide_hair)
+         << "  render {\n"
+         << PRINT_PROP("    ", settings, render_mode)
+         << PRINT_PROP_v3("    ", settings, root_color)
+         << PRINT_PROP_v3("    ", settings, tip_color)
+         << PRINT_PROP("    ", settings, use_separate_tip_color)
+         << PRINT_PROP("    ", settings, hair_thickness)
+         << PRINT_PROP("    ", settings, hair_thickness_at_tip_ratio)
+         << PRINT_PROP("    ", settings, use_thin_tip)
+         << "  },\n"
+         << "  simulation {\n"
+         << PRINT_PROP("    ", sim_settings, m_gravityMagnitude)
+         << PRINT_PROP("    ", sim_settings, m_damping)
+         << PRINT_PROP("    ", sim_settings, m_globalConstraintStiffness)
+         << PRINT_PROP("    ", sim_settings, m_globalConstraintsRange)
+         << PRINT_PROP("    ", sim_settings, m_vspCoeff)
+         << PRINT_PROP("    ", sim_settings, m_vspAccelThreshold)
+         << PRINT_PROP("    ", sim_settings, m_localConstraintStiffness)
+         << PRINT_PROP("    ", sim_settings, m_localConstraintsIterations)
+         << PRINT_PROP("    ", sim_settings, m_lengthConstraintsIterations)
+         << PRINT_PROP_v3("    ", sim_settings, m_windDirection)
+         << PRINT_PROP("    ", sim_settings, m_windMagnitude)
+         << "  }\n"
+         << "}"
+         ;
+    LOGE <<"}";
+  }
 }

@@ -30,7 +30,7 @@ void main () {
     // c = vec4( float(NODE_DATA(0)) );
     // imageAtomicExchange(tFragmentListHead, ivec2(gl_FragCoord.xy), 32);
   // }
-  ps_outputColor = vec4(1,1,0,1);
+  // ps_outputColor = vec4(1,1,0,1);
 }
 
 

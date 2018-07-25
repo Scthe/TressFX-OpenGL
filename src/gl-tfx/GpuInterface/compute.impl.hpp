@@ -46,12 +46,64 @@ void TFx_cbDestroyPSO(EI_Device* pDevice, EI_PSO* pso) {
   delete pso;
 }
 
+static void update_uniforms_simulation (glUtils::Shader& shader, GlobalState& state, TressFXHairObject& hair_obj) {
+  auto& settings = state.tfx_settings;
+  auto& sim_s = settings.simulation_settings;
+  f32 UNUSED = 0.0; i32 UNUSED_I = 0;
+
+  // GFX_FAIL("swap include in shaders! Modify mock step by step and see what comes. Start with gravity");
+  glm::vec3 wind_dir = { sim_s.m_windDirection[0], sim_s.m_windDirection[1], sim_s.m_windDirection[2] };
+  wind_dir = glm::normalize(wind_dir) * sim_s.m_windMagnitude;
+  glm::vec4 g_Wind = { wind_dir,  UNUSED };
+  glm::vec4 g_Wind1 = {0,0,0,0};
+  glm::vec4 g_Wind2 = {0,0,0,0};
+  glm::vec4 g_Wind3 = {0,0,0,0};
+  glm::vec4 g_Shape = {
+    sim_s.m_damping,
+    sim_s.m_localConstraintStiffness,
+    sim_s.m_globalConstraintStiffness,
+    sim_s.m_globalConstraintsRange };
+  glm::vec4 g_GravTimeTip = {
+    sim_s.m_gravityMagnitude * settings.gravity_multipler, // g_GravityMagnitude
+    (1.0 / 60.0), // g_TimeStep TODO hardcoded here?
+    sim_s.m_tipSeparation, // g_TipSeparationFactor
+    UNUSED };
+  glm::ivec4 g_SimInts = {
+    sim_s.m_lengthConstraintsIterations,
+    sim_s.m_localConstraintsIterations, // ? g_NumLocalShapeMatchingIterations AMD has collision? Either way unused in shader code..
+    UNUSED_I,
+    UNUSED_I };
+  glm::ivec4 g_Counts = {
+    TRESSFX_SIM_THREAD_GROUP_SIZE / hair_obj.GetNumVerticesPerStrand(), // g_NumOfStrandsPerThreadGroup (2)
+    settings.follow_hairs_per_guide_hair, // g_NumFollowHairsPerGuideHair
+    hair_obj.GetNumVerticesPerStrand(), // g_NumVerticesPerStrand, unused in shader code
+    UNUSED_I };
+  glm::vec4 g_VSP = {
+    sim_s.m_vspCoeff,
+    sim_s.m_vspAccelThreshold,
+    UNUSED,
+    UNUSED };
+
+    glUtils::set_uniform(shader, "g_Wind", g_Wind);
+    glUtils::set_uniform(shader, "g_Wind1", g_Wind1);
+    glUtils::set_uniform(shader, "g_Wind2", g_Wind2);
+    glUtils::set_uniform(shader, "g_Wind3", g_Wind3);
+    glUtils::set_uniform(shader, "g_Shape", g_Shape);
+    glUtils::set_uniform(shader, "g_GravTimeTip", g_GravTimeTip);
+    glUtils::set_uniform(shader, "g_SimInts", g_SimInts);
+    glUtils::set_uniform(shader, "g_Counts", g_Counts);
+    glUtils::set_uniform(shader, "g_VSP", g_VSP);
+}
+
 // All our compute shaders have dimensions of (N,1,1)
 void TFx_cbDispatch(EI_CommandContextRef commandContext, EI_PSO& pso, int nThreadGroups) {
   LOGD << "[TFx_cbDispatch]";
 
   GFX_FAIL_IF(!commandContext.simulated_hair_object,
       "[TFx_cbDispatch] commandContext.simulated_hair_object was not set, "
+      "this would make binding not possible");
+  GFX_FAIL_IF(!commandContext.state,
+      "[TFx_cbDispatch] commandContext.state was not set, "
       "this would make binding not possible");
   GFX_FAIL_IF(!pso.shader, "[TFx_cbDispatch] Tried to dispatch compute shader,"
       " but shader reference does not exists");
@@ -66,6 +118,7 @@ void TFx_cbDispatch(EI_CommandContextRef commandContext, EI_PSO& pso, int nThrea
   // EI_Bind(commandContext, GetSimLayout(), *hairObject.m_pSimBindSet);
   EI_Bind(commandContext, GetSimPosTanLayout(), hairObject.GetPosTanCollection().GetSimBindSet());
   EI_Bind(commandContext, GetSimLayout(), hairObject.GetSimBindSet());
+  update_uniforms_simulation(shader, *commandContext.state, hairObject);
 
   // do the dispatch
   // NOTE: provides thread groups, not global_work_size

@@ -15,7 +15,6 @@ namespace glTFx {
     public:
 
     void initialize(
-        const char*const modelName,
         const char*const hairObjectName,
         const char*const tfxFilePath,
         // const char*const tfxboneFilePath,

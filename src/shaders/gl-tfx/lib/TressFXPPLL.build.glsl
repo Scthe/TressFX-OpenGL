@@ -2,7 +2,7 @@
 
 // 2D texture to store head pointers
 // RWTexture2D<int> tRWFragmentListHead;
-layout(binding = 0, r32ui)
+layout(location=1, r32ui) // why location, not binding? everyone uses binding, but location seems to be correct
 uniform uimage2D tRWFragmentListHead;
 
 // SSBO to store nodes

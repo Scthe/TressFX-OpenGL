@@ -31,12 +31,12 @@
 
 // 2D texture to store head pointers
 // Texture2D<int>    tFragmentListHead;
-layout(binding = 0, r32ui)
+layout(binding=0, r32ui)
 uniform uimage2D tFragmentListHead;
 
 // SSBO to store nodes
 // StructuredBuffer<PPLL_STRUCT> LinkedListSRV;
-STRUCTURED_BUFFER(1, PPLL_STRUCT , LinkedListSRV)
+STRUCTURED_BUFFER(1, PPLL_STRUCT, LinkedListSRV)
 
 
 vec4 UnpackUintIntoFloat4(uint uValue) {

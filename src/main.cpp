@@ -1,5 +1,8 @@
 #include <cstring>
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <cerrno>
 #include <glm/gtc/matrix_transform.hpp>
 #include "../include/gl-utils/main.hpp"
 
@@ -9,17 +12,20 @@ using namespace glUtils;
 #pragma GCC diagnostic ignored "-Wunused-function" // commented out fn
 
 #include "State.hpp"
+#include "utils.impl.hpp"
 #include "gui.impl.hpp"
-#include "scene_load.impl.hpp"
+#include "scene.impl.hpp"
 #include "camera_ortho.impl.hpp"
 
 
+void create_dummy_vao (GLuint& vao) {
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
+  glVertexAttribI1i(0, 0); // index, default_value
+  glBindVertexArray(0);
+}
 
-///
-/// main
-///
-
-void draw_bg (GlobalState& state, const Shader& shader, GLuint whatever_vao_gl_id) {
+void draw_bg (GlobalState& state, const Shader& shader) {
   // shader & PSO
   glUseProgram(shader.gl_id);
   DrawParameters params;
@@ -33,101 +39,108 @@ void draw_bg (GlobalState& state, const Shader& shader, GLuint whatever_vao_gl_i
   glUtils::set_uniform(shader, "g_screenHeight", (f32)state.win_height, true);
 
   // geo
-  glBindVertexArray(whatever_vao_gl_id);
+  glBindVertexArray(state.dummy_vao);
 
   // draw
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
+void draw_wind (GlobalState& state, const Shader& shader) {
+  // shader & PSO
+  glUseProgram(shader.gl_id);
+  DrawParameters params;
+  params.backface_culling = glUtils::BackfaceCullingMode::CullingDisabled;
+  state.update_draw_params(params);
+
+  // uniforms
+  const auto& tfx_settings = state.tfx_settings;
+  const auto& camera = state.camera;
+  const auto& sim_settings = tfx_settings.simulation_settings;
+  glm::vec3 wind_dir = { sim_settings.m_windDirection[0], sim_settings.m_windDirection[1], sim_settings.m_windDirection[2] };
+  wind_dir = glm::normalize(wind_dir);
+  glUtils::set_uniform(shader, "g_WindDirection", glm::vec4(wind_dir, 1.0), true);
+  glUtils::set_uniform(shader, "g_Eye", state.camera.get_position(), true);
+  glUtils::set_uniform(shader, "g_VP", camera.projection * camera.view);
 
 
-static GLuint tmp_vao;
-static Shader perf_test_shader;
-void perf_test_init () {
-  glGenVertexArrays(1, &tmp_vao);
-  glBindVertexArray(tmp_vao);
-  glVertexAttribI1i(0, 0); // index, default_value
-  glBindVertexArray(0);
+  // geo
+  glBindVertexArray(state.dummy_vao);
 
-  create_shader(perf_test_shader,
-    "src/shaders/perf_test/vert.glsl",
-    "src/shaders/perf_test/frag.glsl"
-  );
+  // draw
+  glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
-void perf_test_draw () {
-  glDisable(GL_CULL_FACE);
-  glUseProgram(perf_test_shader.gl_id);
-  glBindVertexArray(tmp_vao);
+void init_tfx_settings(glTFx::TFxSettings& settings) {
+  auto& sim = settings.simulation_settings;
 
-  // auto verices_count = 6;
-  GLsizei verices_count = 1249920;// / 1000;
-  // TODO set index buffer?
-  // glDrawElementsInstanced(GL_TRIANGLES, verices_count,
-      // idx_buffer.buffer_el_type, 0, drawParams.numInstances);
-  // glDrawElements(GL_TRIANGLES, verices_count, idx_buffer.buffer_el_type, 0);
-  // glDrawElements(GL_TRIANGLES, verices_count, idx_buffer.buffer_el_type, 0);
-  glDrawArrays(GL_TRIANGLES, 0, verices_count);
+  // model matrix
+  glm::mat4 m(1);
+  const float model_scale = 0.01;
+  m = glm::scale(m, glm::vec3(model_scale, model_scale, model_scale));
+  settings.model_matrix = glm::translate(m, {0,-60,0}); // scale is absurd
+
+  settings.gravity_multipler = 30.0f;
+  sim.m_gravityMagnitude = 1.0f;
+  // sim.m_windDirection[0] = -1.0f;
 }
+
+///
+/// main
+///
+
 
 int main(int argc, char *argv[]) {
   // logger::Log::ReportingLevel = logger::Trace;
-  // logger::Log::ReportingLevel = logger::Warning;
-  logger::Log::ReportingLevel = logger::Error;
+  logger::Log::ReportingLevel = logger::Warning;
+  // logger::Log::ReportingLevel = logger::Error;
 
   GlobalState state;
+  init_tfx_settings(state.tfx_settings);
 
+  // create window
   WindowInitOpts opts;
   opts.title = state.title;
   opts.w = state.win_width;
   opts.h = state.win_height;
   auto window = create_window(opts);
   LOGI << "Created window: " << window.screen_size[0] << "x" << window.screen_size[1];
+  imgui_init(window);
   apply_draw_parameters(state.draw_params, nullptr);
-  DrawParameters clean_params;
+  create_dummy_vao(state.dummy_vao);
+  glClearColor(0.5, 0.5, 0.5, 0.5);
+  glClearStencil(0);
 
+  // set opengl debug print policy
   DebugBehaviourForType debug_beh;
   debug_beh.error.set_all(DebugBehaviour::AsError);
   debug_beh.undefined_behavior.set_all(DebugBehaviour::AsError);
   debug_beh.performance.high = DebugBehaviour::AsDebug;
   glUtils::init_debug_callback(debug_beh);
 
-  // TFx test:
+  // TFx
   glTFx::TFxSample tfx_sample(&state);
   tfx_sample.init();
-  // LOGI << "TFxSample::init finished!";
-  // LOGI << "TFxSample::draw starts now";
-  glClearColor(0.5, 0.5, 0.5, 0.5);
-  glClearStencil(0);
-  // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-  // tfx_sample.draw_hair();
-  // LOGE << "-------- DRAW DONE --------";
-  // glUseProgram(0);
-  // TODO bind simulation settings?
-  // tfx_sample.simulate(0.0);
-  // LOGE << "-------- SIMULATE DONE --------";
-  // tfx_sample.wait_simulate_done();
-  // SDL_GL_SwapWindow(window.sdl_window);
-  // LOGI << "TFxSample::draw finished!";
-  // system("pause"); state.running = false;
 
-  // perf_test_init();
-
-
+  // scene geometry
   // Geometry scene_geometry = load_scene(state);
   // Shader bg_shader;
   // create_shader(bg_shader, state.bg_vs, state.bg_fs);
+  const std::string wind_vs = "src/shaders/wind.vert.glsl";
+  const std::string wind_fs = "src/shaders/wind.frag.glsl";
+  Shader wind_shader;
+  create_shader(wind_shader, wind_vs, wind_fs);
 
-  imgui_init(window);
 
-
+  // run
   while(state.running) {
     // events
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       ImGui_ImplSDL2_ProcessEvent(&event);
 
-      update_camera(state, event);
+      if (!ImGui::GetIO().WantCaptureMouse) {
+        update_camera(state, event);
+      }
 
       if (event.type == SDL_QUIT) {
         state.running = false;
@@ -135,16 +148,18 @@ int main(int argc, char *argv[]) {
     }
 
     // clear
+    DrawParameters clean_params;
     state.update_draw_params(clean_params);
     glStencilMask(~0); // TODO reorganize stencil in DrawParameters - in reality it is simpler then current, with less front/back-separable features
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+    // scene
     // we could use stencils to make it more optimized, but ./shrug
-    // draw_bg(state, bg_shader, scene_geometry.vao.gl_id);
+    // draw_bg(state, bg_shader);
+    draw_wind(state, wind_shader);
     // draw_scene(state, scene_geometry);
 
-    // perf_test_draw();
-
+    // tfx
     tfx_sample.simulate(0.0);
     tfx_sample.wait_simulate_done();
     tfx_sample.draw_hair();
@@ -154,10 +169,8 @@ int main(int argc, char *argv[]) {
     imgui_update(window, state); // prepare draw command list
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData()); // draw
 
-    // swap
+    // swap buffers
     SDL_GL_SwapWindow(window.sdl_window);
-
-    // state.running = false;
   }
 
   // Cleanup

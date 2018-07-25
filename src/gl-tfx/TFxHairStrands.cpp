@@ -18,14 +18,13 @@
 namespace glTFx {
 
   void TFxHairStrands::initialize(
-      const char*const modelName,
       const char*const hairObjectName,
       const char*const tfxFilePath,
       // const char*const   tfxboneFilePath,
       int numFollowHairsPerGuideHair,
       float tipSeparationFactor)
   {
-    LOGD << "Loading '" << modelName << "." << hairObjectName << "' from '" << tfxFilePath << "'";
+    LOGD << "Loading '" << hairObjectName << "' from '" << tfxFilePath << "'";
 
     EI_Device* pDevice = GetDevice();
     EI_CommandContextRef uploadCommandContext = GetContext();
@@ -43,7 +42,7 @@ namespace glTFx {
 
     asset->GenerateFollowHairs(numFollowHairsPerGuideHair, tipSeparationFactor, 1.2f);
     asset->ProcessAsset();
-    glTFx::debug::debug_asset(modelName, hairObjectName, *asset);
+    glTFx::debug::debug_asset(hairObjectName, *asset);
     LOGD << "Asset processing complete, will create hairObject (hairObject->Create)";
 
     // Load *.tfxbone

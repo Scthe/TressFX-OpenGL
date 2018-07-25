@@ -31,7 +31,6 @@ void TFx_cbDestroyIB(EI_Device* pDevice, EI_IndexBuffer* pBuffer) {
   delete pBuffer;
 }
 
-
 void TFx_cbDrawIndexedInstanced(EI_CommandContextRef commandContext,
     EI_PSO& pso, AMD::EI_IndexedDrawParams& drawParams)
 {
@@ -39,7 +38,10 @@ void TFx_cbDrawIndexedInstanced(EI_CommandContextRef commandContext,
   glTFx::debug::debug_DrawParams(drawParams);
 
   GFX_FAIL_IF(!commandContext.state, "EI_CommandContext should have been initialized"
-  "with ptr to GlobalState before TFx_cbDrawIndexedInstanced() was called");
+      "with ptr to GlobalState before TFx_cbDrawIndexedInstanced() was called");
+
+  GFX_FAIL_IF(!pso.shader, "EI_PSO should have been initialized"
+      "with ptr to shader before TFx_cbDrawIndexedInstanced() was called");
 
   auto& state = *commandContext.state;
   EI_IndexBuffer& idx_buffer = *drawParams.pIndexBuffer;

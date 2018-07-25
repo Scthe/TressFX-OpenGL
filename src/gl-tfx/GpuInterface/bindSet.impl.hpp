@@ -82,7 +82,7 @@ static void bind (const EI_Resource& resource_instance, ShaderResource& resource
       if (at) {
         glUtils::set_shader_atomic(shader, gl_binding, resource_instance.buffer_with_counter.counter, 0);
       } else {
-        LOGW << "No atomics to set were found on binding " << gl_binding <<
+        LOGD << "No atomics to set were found on binding " << gl_binding <<
            ". Verify they are actually used. This is not an error when binding"
            " StructuredBufferRW_WithAtomicCounter, as there is not always need"
            " to use both buffer and atomic.";
@@ -98,6 +98,7 @@ static void bind (const EI_Resource& resource_instance, ShaderResource& resource
   }
 }
 
+/*
 static void update_constants(std::vector<const EffectParameter*>& cb, char* values, int nBytes) {
   LOGT << "[TFx_cbBind] update_constants(size=" << cb.size() << ", nBytes=" << nBytes << ")";
 
@@ -129,6 +130,7 @@ static void update_constants(std::vector<const EffectParameter*>& cb, char* valu
       // nBytes, " bytes. Check if all types match. If they do, there may be"
       // " an offset problem. bwahahahahahahahahahahahah You are F_cked");
 }
+*/
 
 static void verify_glsl_variable_exists (ShaderResource& resource_glsl, EI_StringHash& buffer_name) {
   GFX_FAIL_IF(!resource_glsl.was_found_in_glsl(), "Tried to bind resource ",
@@ -161,7 +163,7 @@ void TFx_cbBind(EI_CommandContextRef commandContext, EI_BindLayout* pLayout, EI_
     bind(bind_item, layout_item);
   }
 
-  LOGW << "Skip update_constants, cause we hardcode everything";
+  // LOGW << "Skip update_constants, cause we hardcode everything";
   // update_constants(pLayout->constants, (char*)set.values, set.nBytes);
 }
 

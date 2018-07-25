@@ -81,8 +81,10 @@ namespace glTFx {
     this->initialize_layouts();
 
     auto pDevice = GetDevice();
+    const auto& tfx_settings = app_state->tfx_settings;
 
-    if (app_state->use_shortcut) {
+    if (tfx_settings.use_shortcut) {
+      GFX_FAIL("Shortcut is not implemented yet");
       // m_pShortCut = new TFxShortCut();
       // m_pShortCut->shutdown(pDevice);
       // m_pShortCut->initialize(app_state->win_width, app_state->win_height/*,
@@ -101,11 +103,10 @@ namespace glTFx {
     // load hair strands
     m_hairStrands.push_back(new TFxHairStrands);
     m_hairStrands[0]->initialize(
-      "RatBoy_body", "mohawk",
-      "assets\\Ratboy\\Ratboy_mohawk.tfx",
-      // "Objects\\HairAsset\\Ratboy\\Ratboy_mohawk.tfxbone",
-      2, // This is number of follow hairs per one guide hair. It could be zero if there is no follow hair at all.
-      2.0f
+      tfx_settings.object_name,
+      tfx_settings.filepath,
+      tfx_settings.follow_hairs_per_guide_hair,
+      tfx_settings.simulation_settings.m_tipSeparation
     );
   }
 
@@ -124,7 +125,7 @@ namespace glTFx {
     // m_pHairStrandsEffect->GetParameter("vFragmentBufferSize")->SetFloatVector(&vFragmentBufferSize.x);
     // m_pHairResolveEffect->GetParameter("vFragmentBufferSize")->SetFloatVector(&vFragmentBufferSize.x);
 
-    if (app_state->use_shortcut) {
+    if (app_state->tfx_settings.use_shortcut) {
       GFX_FAIL("Shortcut is not implemented yet");
       // m_pShortCut->draw(m_hairStrands);
     } else {

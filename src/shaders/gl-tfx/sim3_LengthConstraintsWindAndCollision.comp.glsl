@@ -1,8 +1,7 @@
 #version 450
 
 #pragma include "_utils.glsl"
-#pragma include "sim/_SimParams.mock.comp.glsl"
-// #pragma include "sim/_SimParams.comp.glsl"
+#pragma include "sim/_SimParams.comp.glsl"
 #pragma include "sim/_SimCommon.comp.glsl"
 #pragma include "sim/_SimBuffers.comp.glsl"
 #pragma include "sim/_SimCapsuleCollision.comp.glsl"
@@ -70,7 +69,7 @@ void main() {
 
 
   // Wind
-  if (g_Wind.x != 0 || g_Wind.y != 0 || g_Wind.z != 0) {
+  if (g_Wind.x != 0 || g_Wind.y != 0 || g_Wind.z != 0) { // compare on floats?!
     // only vertices 2nd and it's children, root and 1st ignore wind
     if (vertData.vertexId >= 2 && vertData.vertexId < numVerticesInTheStrand - 1) {
       // combining four winds.

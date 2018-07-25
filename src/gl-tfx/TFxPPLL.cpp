@@ -27,7 +27,7 @@ namespace glTFx {
     // m_pBuildPSO.draw_params.polygon_mode = glUtils::PolygonMode::Line;
     // m_pBuildPSO.draw_params.point_size = 3.0f;
     m_pBuildPSO.draw_params.backface_culling = glUtils::BackfaceCullingMode::CullingDisabled;
-    // m_pBuildPSO.draw_params.color_write[0] = false;
+    m_pBuildPSO.draw_params.color_write[0] = false;
     m_pBuildPSO.draw_params.color_write[1] = false;
     m_pBuildPSO.draw_params.color_write[2] = false;
     m_pBuildPSO.draw_params.color_write[3] = false;
@@ -64,39 +64,44 @@ namespace glTFx {
     }
   }
 
+  static void update_uniforms_build (glUtils::Shader& shader, GlobalState& state, u32 nodePoolSize) {
+    auto& settings = state.tfx_settings;
+    auto& camera = state.camera;
+
+    glUtils::set_uniform(shader, "nNodePoolSize", (int)nodePoolSize, true);
+    glUtils::set_uniform(shader, "g_bThinTip", static_cast<i32>(settings.use_thin_tip), true);
+    glUtils::set_uniform(shader, "g_Ratio", static_cast<f32>(settings.hair_thickness_at_tip_ratio), true);
+    glUtils::set_uniform(shader, "g_FiberRadius", static_cast<f32>(settings.hair_thickness), true);
+    glUtils::set_uniform(shader, "g_MatBaseColor", static_cast<glm::vec4>(settings.root_color), true);
+    glm::vec4 tip_color = settings.use_separate_tip_color ? settings.tip_color : settings.root_color;
+    glUtils::set_uniform(shader, "g_MatTipColor", static_cast<glm::vec4>(tip_color), true);
+    glUtils::set_uniform(shader, "g_WinSize", glm::vec2(state.win_width, state.win_height), true);
+    glUtils::set_uniform(shader, "g_vEye", state.camera.get_position(), true);
+    glm::mat4 mvp = camera.projection * camera.view * settings.model_matrix;
+    glUtils::set_uniform(shader, "g_mVP", mvp, false, true);
+  }
+
   void TFxPPLL::draw(std::vector<TFxHairStrands*>& hairStrands, u32 nodePoolSize) {
     // LOGE << "START draw_hair";
     EI_CommandContextRef commandContext = GetContext();
+    GFX_FAIL_IF(!commandContext.state, "EI_CommandContext should have been initialized"
+        "with ptr to GlobalState before TFxPPLL::draw was called");
+    GFX_FAIL_IF(!m_pBuildPSO.shader, "m_pBuildPSO should have been initialized"
+        "with ptr to shader before TFxPPLL::draw was called");
+    auto& shader = *m_pBuildPSO.shader;
 
     // build ppll
     glUseProgram(m_pBuildPSO.shader->gl_id);
     commandContext.state->update_draw_params(m_pBuildPSO.draw_params);
     m_pPPLL->Clear(commandContext);
-    m_pPPLL->BindForBuild(commandContext);  // put clear in here?
-    {
-      commandContext.state->update_draw_params(m_pBuildPSO.draw_params); // TODO remove from draw, and apply just here
-      // uniform int nNodePoolSize; // width * height * AVE_FRAGS_PER_PIXEL(4)
-      glUtils::set_uniform(*m_pBuildPSO.shader, "nNodePoolSize", (int)nodePoolSize, true);
-      // uniform mat4 g_mVP;
-      glm::mat4 m(1);
-      float sc = 0.01;
-      m = glm::scale(m, glm::vec3(sc,sc,sc));
-      // auto v = glm::translate(view, {0, 0, -state.camera_distance});
-      auto v = commandContext.state->camera.view;
-      auto p = commandContext.state->camera.projection;
-      glm::mat4 mvp = p * v * m;
-      glUtils::set_uniform(*m_pBuildPSO.shader, "g_mVP", mvp, false, true);
-      // uniform vec3 g_vEye;
-      auto mv = v * m;
-      glm::vec3 cam_pos = { mv[3][0], mv[3][1], mv[3][2]};
-      glUtils::set_uniform(*m_pBuildPSO.shader, "g_vEye", cam_pos, true);
-      // uniform float g_FiberRadius; // size of strand
-      glUtils::set_uniform(*m_pBuildPSO.shader, "g_FiberRadius", 0.05f, true);
-    }
+    m_pPPLL->BindForBuild(commandContext);
+    update_uniforms_build(shader, *commandContext.state, nodePoolSize);
+
     LOGD << "PPLL pass1 preparations complete, will draw " << hairStrands.size() << " strands";
     for (size_t i = 0; i < hairStrands.size(); i++) {
       TressFXHairObject* pHair = hairStrands[i]->get_AMDTressFXHandle();
       if (pHair) {
+        glUtils::set_uniform(shader, "g_NumVerticesPerStrand", pHair->GetNumVerticesPerStrand());
         pHair->DrawStrands(commandContext, m_pBuildPSO);
       }
     }

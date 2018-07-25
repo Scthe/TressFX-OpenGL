@@ -5,12 +5,17 @@
 // static const bool g_bExpandPixels = false; // yep, pls just keep 0/false
 
 // if use g_Ratio
-// uniform bool g_bThinTip;
+uniform int g_bThinTip;
 // scale down at the tip.
 // e.g. 0.5 means that hair is half as thick at tip when compared to root
-// uniform float g_Ratio;
+uniform float g_Ratio;
 
 uniform float g_FiberRadius;
+uniform vec4 g_MatBaseColor;
+uniform vec4 g_MatTipColor;
+uniform vec2 g_WinSize;
+
+uniform int g_NumVerticesPerStrand;
 
 // No colors for now
 // texture2D<vec3> g_txHairColor;
@@ -43,11 +48,18 @@ vec3 Safe_normalize3(vec3 vec) {
   return len >= TRESSFX_FLOAT_EPSILON ? normalize(vec) : vec3(0, 0, 0);
 }
 
-vec3 GetStrandColor(uint index) {
+
+vec3 GetStrandColor(uint index, float vertex_position) {
+  return mix(g_MatTipColor, g_MatBaseColor, vertex_position).rgb;
+  // float a = (g_MatTipColor + g_MatBaseColor).x * 0.00001;
+  // return vec3(vertex_position) + a;
   // vec2 texCd = g_HairStrandTexCd_[(uint)index / (uint)g_NumVerticesPerStrand];
   // vec3 color = g_txHairColor.SampleLevel(g_samLinearWrap, texCd, 0).xyz;// * g_MatBaseColor.xyz;
-  // return (color);
-  return vec3(0.7);
+}
+
+float GetVertexInStrandPercentage (uint index) {
+  uint vertexId = index % uint(g_NumVerticesPerStrand); // [0-32]
+  return 1.0 - (float(vertexId) / float(g_NumVerticesPerStrand)); // [0-1]
 }
 
 struct TressFXVertex {
@@ -70,16 +82,12 @@ TressFXVertex GetExpandedTressFXVert(uint vertexId, vec3 eye, /*vec2 winSize,*/ 
   vec3 t = GetTangent(index).xyz;
 
   // Get hair strand thickness
-  // float ratio = (g_bThinTip > 0) ? g_Ratio : 1.0;
-  float ratio = 1.0;
+  float vertex_position = GetVertexInStrandPercentage(index);
+  float ratio = mix(g_Ratio, 1.0, g_bThinTip > 0 ? vertex_position : 1.0);
 
   // Calculate right and projected right vectors
   vec3 towardsCamera = Safe_normalize3(v - eye);
-  vec3 right = Safe_normalize3(cross(t, towardsCamera));
-  // vec2 proj_right = Safe_normalize(MatrixMult(viewProj, vec4(right, 0)).xy);
-
-  // g_bExpandPixels should be set to 0 at minimum from the CPU side; this would avoid the below test
-  // float expandPixels = (g_bExpandPixels < 0) ? 0.0 : 0.71;
+  vec3 right = Safe_normalize3(cross(t, towardsCamera)); // TODO verify is ok
 
   // Calculate the negative and positive offset screenspace positions
   vec4 hairEdgePositions[2]; // 0 is for odd vertexId, 1 is positive even vertexId
@@ -92,15 +100,22 @@ TressFXVertex GetExpandedTressFXVert(uint vertexId, vec3 eye, /*vec2 winSize,*/ 
   // Write output data
   TressFXVertex Output;
 	bool isOdd = (vertexId & 0x01) > 0; // just check where it is used..
-  // float fDirIndex = (vertexId & 0x01) ? -1.0 : 1.0;
   Output.Position = (isOdd ? hairEdgePositions[0] : hairEdgePositions[1]);
-                // + fDirIndex * vec4(proj_right * expandPixels / winSize.y, 0.0f, 0.0f) * ((vertexId & 0x01) ? hairEdgePositions[0].w : hairEdgePositions[1].w);
+  {
+    vec2 proj_right = Safe_normalize2(MatrixMult(viewProj, vec4(right, 0)).xy);
+    // g_bExpandPixels should be set to 0 at minimum from the CPU side; this would avoid the below test
+    float expandPixels = 0.71; //(g_bExpandPixels < 0) ? 0.0 : 0.71;
+    float fDirIndex = isOdd ? -1.0 : 1.0;
+    vec4 tmp = vec4(proj_right * expandPixels / g_WinSize.y, 0.0f, 0.0f);
+    float w = isOdd ? hairEdgePositions[0].w : hairEdgePositions[1].w;
+    Output.Position += fDirIndex * tmp * w;
+  }
   Output.Tangent = vec4(t, ratio); // pack tangent + ThinTipRatio
   Output.p0p1 = vec4(
     hairEdgePositions[0].xy / max(hairEdgePositions[0].w, TRESSFX_FLOAT_EPSILON),
     hairEdgePositions[1].xy / max(hairEdgePositions[1].w, TRESSFX_FLOAT_EPSILON)
   );
-  Output.strandColor = GetStrandColor(index);
+  Output.strandColor = GetStrandColor(index, vertex_position);
   //Output.PosCheck = MatrixMult(g_mView, vec4(v,1));
 
   return Output;
