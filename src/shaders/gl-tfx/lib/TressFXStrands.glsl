@@ -14,6 +14,7 @@ uniform float g_FiberRadius;
 uniform vec4 g_MatBaseColor;
 uniform vec4 g_MatTipColor;
 uniform vec2 g_WinSize;
+uniform float g_ColorShiftScale;
 
 uniform int g_NumVerticesPerStrand;
 
@@ -48,11 +49,25 @@ vec3 Safe_normalize3(vec3 vec) {
   return len >= TRESSFX_FLOAT_EPSILON ? normalize(vec) : vec3(0, 0, 0);
 }
 
+vec3 RandomizeColorBasedOnStrand (uint strandId, vec3 color) {
+  // only hue changes, cause more 'stylized'
+  // (totally not cause too lazy to implement)
+  vec3 hsv = rgb2hsv(color);
+  float hueShift = float(strandId % 20) / 10.0; // rand [0-2], 20 is meaningless
+  hueShift = (hueShift - 1.0) * g_ColorShiftScale;
+  hsv.x += hueShift;
+  return hsv2rgb(hsv);
+}
 
-vec3 GetStrandColor(uint index, float vertex_position) {
-  return mix(g_MatTipColor, g_MatBaseColor, vertex_position).rgb;
-  // float a = (g_MatTipColor + g_MatBaseColor).x * 0.00001;
-  // return vec3(vertex_position) + a;
+vec4 GetStrandColor(uint index, float vertex_position) {
+  uint strandId = index / uint(g_NumVerticesPerStrand);
+  vec4 baseColor = mix(g_MatTipColor, g_MatBaseColor, vertex_position);
+  return vec4(RandomizeColorBasedOnStrand(strandId, baseColor.rgb), baseColor.a);
+
+  // simple:
+  // return mix(g_MatTipColor, g_MatBaseColor, vertex_position);
+
+  // AMD from texture:
   // vec2 texCd = g_HairStrandTexCd_[(uint)index / (uint)g_NumVerticesPerStrand];
   // vec3 color = g_txHairColor.SampleLevel(g_samLinearWrap, texCd, 0).xyz;// * g_MatBaseColor.xyz;
 }
@@ -66,7 +81,7 @@ struct TressFXVertex {
   vec4 Position;
   vec4 Tangent;
   vec4 p0p1;
-  vec3 strandColor;
+  vec4 strandColor;
 };
 
 

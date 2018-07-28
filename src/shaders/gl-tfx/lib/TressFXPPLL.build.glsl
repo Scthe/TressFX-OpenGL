@@ -14,13 +14,6 @@ layout(binding=0, offset=0) uniform atomic_uint LinkedListUAV_counter;
 // width * height * AVE_FRAGS_PER_PIXEL(4)
 uniform int nNodePoolSize;
 
-uint PackFloat4IntoUint(vec4 vValue) {
-  return ((uint(vValue.x * 255)) << 24) |
-         ((uint(vValue.y * 255)) << 16) |
-         ((uint(vValue.z * 255)) << 8) |
-           uint(vValue.w * 255);
-}
-
 // Allocate a new fragment location in fragment color, depth, and link buffers
 uint AllocateFragment(ivec2 vScreenAddress) {
   uint newAddress = atomicCounterIncrement(LinkedListUAV_counter); //LinkedListUAV.IncrementCounter();

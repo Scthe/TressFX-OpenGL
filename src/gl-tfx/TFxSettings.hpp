@@ -14,6 +14,10 @@ namespace glTFx {
 
   struct TFxSettings {
 
+    TFxSettings(){
+      this->model_matrix = glm::mat4(1);
+    }
+
     //
     // model
     const char*const object_name = "mohawk";
@@ -30,6 +34,7 @@ namespace glTFx {
     glm::vec4 root_color = {0.93, 0.11, 0.11, 1.0};
     glm::vec4 tip_color = {0.09, 0.09, 0.14, 1.0};
     bool use_separate_tip_color = true;
+    float strand_hue_rand_scale = 0.0;
     // thickness
     f32 hair_thickness = 0.1;
     f32 hair_thickness_at_tip_ratio = 0.5; // thick hair root, thin tip

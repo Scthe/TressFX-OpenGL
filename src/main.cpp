@@ -49,7 +49,7 @@ void draw_wind (GlobalState& state, const Shader& shader) {
   // shader & PSO
   glUseProgram(shader.gl_id);
   DrawParameters params;
-  params.backface_culling = glUtils::BackfaceCullingMode::CullingDisabled;
+  params.culling = glUtils::CullingMode::None;
   state.update_draw_params(params);
 
   // uniforms
@@ -72,6 +72,9 @@ void draw_wind (GlobalState& state, const Shader& shader) {
 
 void init_tfx_settings(glTFx::TFxSettings& settings) {
   auto& sim = settings.simulation_settings;
+
+  settings.root_color = {0.03, 0.07, 0.25, 1.0};
+  settings.tip_color = {0.16, 0.45, 0.64, 1.0};
 
   // model matrix
   glm::mat4 m(1);
@@ -150,7 +153,6 @@ int main(int argc, char *argv[]) {
     // clear
     DrawParameters clean_params;
     state.update_draw_params(clean_params);
-    glStencilMask(~0); // TODO reorganize stencil in DrawParameters - in reality it is simpler then current, with less front/back-separable features
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     // scene

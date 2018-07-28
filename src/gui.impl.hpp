@@ -73,8 +73,11 @@ void imgui_update (GlWindow& window, GlobalState& state) {
     if (ImGui::CollapsingHeader("Render color", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Indent(section_indent);
       ImGui::ColorEdit3("Hair color", (float*)&tfx_settings.root_color, color_flags);
-      ImGui::Checkbox("Use separate tip color", &tfx_settings.use_separate_tip_color);
+      ImGui::SliderFloat("Root opacity", (float*)&tfx_settings.root_color.a, 0.0f, 1.0f);
       ImGui::ColorEdit3("Hair tip color", (float*)&tfx_settings.tip_color, color_flags);
+      ImGui::SliderFloat("Tip opacity", (float*)&tfx_settings.tip_color.a, 0.0f, 1.0f);
+      ImGui::Checkbox("Use separate tip color", &tfx_settings.use_separate_tip_color);
+      ImGui::SliderFloat("Color rand", &tfx_settings.strand_hue_rand_scale, 0.0f, 0.1f);
       ImGui::Unindent(section_indent);
     }
     INSERT_SPACING_HERE
@@ -92,7 +95,7 @@ void imgui_update (GlWindow& window, GlobalState& state) {
     INSERT_SPACING_HERE
 
     // Simulation subtree
-    if (ImGui::CollapsingHeader("Simulation", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Simulation")) {
       ImGui::Indent(section_indent);
       ImGui::SliderFloat("Gravity", &sim_settings.m_gravityMagnitude, 0.0f, 10.0f);
       ImGui::SliderFloat("Damping", &sim_settings.m_damping, 0.0f, 1.0f);
@@ -115,7 +118,7 @@ void imgui_update (GlWindow& window, GlobalState& state) {
     INSERT_SPACING_HERE
 
     // Simulation wind subtree
-    if (ImGui::CollapsingHeader("Simulation wind", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Simulation wind")) {
       ImGui::Indent(section_indent);
       static glm::vec2 wind_angles = {0,0};
       ImGui::SliderFloat("Direction theta", &(wind_angles[1]), 0, 360);

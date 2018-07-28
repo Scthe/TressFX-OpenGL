@@ -1,9 +1,8 @@
 #pragma once
 
 static void sync_depth(const glUtils::Depth&, const glUtils::Depth*const);
-static void sync_stencil(const glUtils::DrawParameters& new_params, const glUtils::DrawParameters*const old_state);
-// static void sync_blend(const Blend&);
-// static void sync_viewport_scissor(const Rect*const viewport, const Rect*const scissor);
+static void sync_stencil(const glUtils::Stencil&, const glUtils::Stencil*const);
+static void sync_blend(const glUtils::Blend&, const glUtils::Blend*const);
 static void toggle_state_bool(GLenum name, bool);
 
 #define CHANGED(PARAM_NAME) (!old_state || old_state->PARAM_NAME != new_params.PARAM_NAME)
@@ -13,11 +12,9 @@ namespace glUtils {
   void apply_draw_parameters(const DrawParameters& new_params, const DrawParameters*const old_state) {
     // https://github.com/glium/glium/blob/master/src/draw_parameters/mod.rs#L476
 
-    // depth
     sync_depth(new_params.depth, old_state ? &old_state->depth : nullptr);
-
-    // stencil
-    sync_stencil(new_params, old_state);
+    sync_stencil(new_params.stencil, old_state ? &old_state->stencil : nullptr);
+    sync_blend(new_params.blend, old_state ? &old_state->blend : nullptr);
 
     // line_width
     if (CHANGED(line_width)) {
@@ -31,7 +28,7 @@ namespace glUtils {
 
     // polygon_mode
     if (CHANGED(polygon_mode)) {
-      GFX_GL_CALL(glPolygonMode, GL_FRONT_AND_BACK, (GLenum)new_params.polygon_mode);
+      GFX_GL_CALL(glPolygonMode, GL_FRONT_AND_BACK, new_params.polygon_mode);
     }
 
     // dithering
@@ -40,11 +37,11 @@ namespace glUtils {
     }
 
     // backface_culling
-    if (new_params.backface_culling == BackfaceCullingMode::CullingDisabled) {
+    if (new_params.culling == CullingMode::None) {
       toggle_state_bool(GL_CULL_FACE, false);
     } else {
       toggle_state_bool(GL_CULL_FACE, true);
-      GFX_GL_CALL(glCullFace, (GLenum)new_params.backface_culling);
+      GFX_GL_CALL(glCullFace, new_params.culling);
     }
 
     //color write
@@ -84,7 +81,7 @@ void sync_depth(const glUtils::Depth& depth, const glUtils::Depth*const old_dept
 }
 
 /** test if we always pass but never write */
-static bool is_stencil_noop(const glUtils::StencilSettings& settings) {
+static bool is_stencil_noop(const glUtils::StencilPerSide& settings) {
   using namespace glUtils;
   bool all_noop = settings.op_stencil_fail == StencilOperation::Keep
                && settings.op_stencil_pass_depth_fail == StencilOperation::Keep
@@ -92,34 +89,92 @@ static bool is_stencil_noop(const glUtils::StencilSettings& settings) {
   return all_noop && settings.test == StencilTest::AlwaysPass;
 }
 
-static void sync_stencil(GLenum face, const glUtils::StencilSettings& settings) {
-  GFX_GL_CALL(glStencilFuncSeparate, face, (GLenum)settings.test,
-    (GLenum)settings.reference_value, (GLenum)settings.compare_mask);
-  GFX_GL_CALL(glStencilOpSeparate, face,
-    (GLenum)settings.op_stencil_fail,
-    (GLenum)settings.op_stencil_pass_depth_fail,
-    (GLenum)settings.op_pass);
-  GFX_GL_CALL(glStencilMaskSeparate, face, (GLenum)settings.write_bytes);
+static bool is_same_stencil_ops (const glUtils::StencilPerSide& front, const glUtils::StencilPerSide& back) {
+  return front.op_stencil_fail == back.op_stencil_fail
+      && front.op_stencil_pass_depth_fail == back.op_stencil_pass_depth_fail
+      && front.op_pass == back.op_pass;
 }
 
-void sync_stencil(const glUtils::DrawParameters& new_params, const glUtils::DrawParameters*const old_state) {
+void sync_stencil(const glUtils::Stencil& new_params, const glUtils::Stencil*const old_state) {
   // https://github.com/glium/glium/blob/cd1bab4f6b7c3b48391289b3a10be115f660b252/src/draw_parameters/stencil.rs#L223
-  auto& front = new_params.stencil_counter_clockwise;
-  auto& back = new_params.stencil_clockwise;
-  auto old_front = old_state ? &old_state->stencil_counter_clockwise : nullptr;
-  auto old_back = old_state ? &old_state->stencil_clockwise : nullptr;
+  if (old_state && (*old_state == new_params)) {
+    return;
+  }
+  const auto& front = new_params.front;
+  const auto& back = new_params.back;
+  const GLint ref_value = new_params.reference_value;
+  const GLuint compare_mask = new_params.compare_mask;
 
-  if (old_state && (*old_front == front && *old_back == back)) {
+  toggle_state_bool(GL_STENCIL_TEST, !is_stencil_noop(front) || is_stencil_noop(back));
+
+  // sync test
+  if (front.test == back.test) {
+    GFX_GL_CALL(glStencilFunc, front.test, ref_value, compare_mask);
+  } else {
+    GFX_GL_CALL(glStencilFuncSeparate, GL_FRONT, front.test, ref_value, compare_mask);
+    GFX_GL_CALL(glStencilFuncSeparate, GL_BACK, back.test, ref_value, compare_mask);
+  }
+
+  // sync write mask
+  GFX_GL_CALL(glStencilMask, new_params.write_bytes);
+
+  // sync ops
+  if (is_same_stencil_ops(front, back)) {
+    GFX_GL_CALL(glStencilOp,
+      front.op_stencil_fail,
+      front.op_stencil_pass_depth_fail,
+      front.op_pass);
+  } else {
+    GFX_GL_CALL(glStencilOpSeparate, GL_FRONT,
+      front.op_stencil_fail,
+      front.op_stencil_pass_depth_fail,
+      front.op_pass);
+    GFX_GL_CALL(glStencilOpSeparate, GL_BACK,
+      back.op_stencil_fail,
+      back.op_stencil_pass_depth_fail,
+      back.op_pass);
+  }
+}
+
+glUtils::BlendingMode eval_blend_mode (const glUtils::BlendingMode src) {
+  using namespace glUtils;
+  if (src.function != BlendingFunction::AlwaysReplace) {
+    return src;
+  }
+  return {BlendingFunction::Addition, BlendingFactor::Zero, BlendingFactor::One};
+}
+
+// TODO expose, since multiple textures in fbo are possible. Tho vary of glEnable
+void sync_blend(const glUtils::Blend& new_params, const glUtils::Blend*const old_state) {
+  // https://github.com/glium/glium/blob/cd1bab4f6b7c3b48391289b3a10be115f660b252/src/draw_parameters/blend.rs#L205
+  using namespace glUtils;
+  if (old_state && new_params == *old_state) {
     return;
   }
 
-  if (is_stencil_noop(front) && is_stencil_noop(back)) {
-    toggle_state_bool(GL_STENCIL_TEST, false);
-  } else {
-    toggle_state_bool(GL_STENCIL_TEST, true);
-    sync_stencil(GL_FRONT, front);
-    sync_stencil(GL_BACK, back);
-  }
+  bool just_replace_col = new_params.color.function == BlendingFunction::AlwaysReplace;
+  bool just_replace_alpha = new_params.alpha.function == BlendingFunction::AlwaysReplace;
+  toggle_state_bool(GL_BLEND, !just_replace_col || !just_replace_alpha);
+
+  GFX_GL_CALL(glBlendColor,
+    new_params.constant_value.r,
+    new_params.constant_value.g,
+    new_params.constant_value.b,
+    new_params.constant_value.a
+  );
+
+  // handle AlwaysReplace artificial mode
+  const auto color = eval_blend_mode(new_params.color);
+  const auto alpha = eval_blend_mode(new_params.alpha);
+
+  GFX_GL_CALL(glBlendEquationSeparate, color.function, alpha.function);
+
+  GFX_GL_CALL(glBlendFuncSeparate,
+    color.new_value_factor,
+    color.current_value_factor,
+    alpha.new_value_factor,
+    alpha.current_value_factor
+  );
 }
 
 #undef CHANGED

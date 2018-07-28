@@ -1,59 +1,64 @@
 #version 450
 
+// #define TAIL_COMPRESS 1
+
 #pragma include "_utils.glsl"
+// #pragma include "lib/TressFXRendering.shading.glsl"
 #pragma include "lib/TressFXPPLL.glsl"
-#pragma include "lib/TressFXPPLL.resolve.glsl"
+#pragma include "lib/TressFXPPLL.resolve.glsl" // uses TressFXRendering.shading
+
 
 // START ppll_resolve.frag
 // (main)
 
-// uniform mat4 g_mInvViewProj;
-// uniform vec4 g_vViewport;
 uniform vec3 g_vEye;
 
-// in vec4 ps_vPosition; // unused: gl_FragCoord?
-// in vec2 ps_vTex;
+const int RENDER_MODE_FILL_ONE_COLOR = 1;
+const int RENDER_MODE_PPLL_DEPTH = 2;
+uniform int g_RenderMode;
+
 out vec4 ps_outputColor;
 
 layout(early_fragment_tests) in; // [earlydepthstencil]
 
+
+// <editor-fold debug>
+const float MAX_DEBUG_LIST_DEPTH = 8;
+const vec3 DEBUG_LIST_0 = vec3(0,0,1);
+const vec3 DEBUG_LIST_1 = vec3(1,0,0);
+
+uint debug_count_list_len (vec2 vfScreenAddress) {
+  uint result = 0;
+  uint pointer = imageLoad(tFragmentListHead, ivec2(vfScreenAddress)).r;
+  uint iter = 0;
+
+  while (pointer != FRAGMENT_LIST_NULL && iter < MAX_DEBUG_LIST_DEPTH) {
+    pointer = NODE_NEXT(pointer);
+    ++result;
+    ++iter;
+  }
+
+  return result;
+}
+// </editor-fold>
+
+
 void main () {
-  ps_outputColor = GatherLinkedList(gl_FragCoord.xy);
+  // we could split the shaders into 3. Or we can shamelessly 'if'
 
-  // uint pointer = imageLoad(tFragmentListHead, ivec2(gl_FragCoord.xy)).r;
-  // if (pointer == FRAGMENT_LIST_NULL) {
-    // discard;
-  // }
-
-  // if (gl_FragCoord.x < 0) {
-    // vec4 c = vec4( 1.0 );
-    // c = vec4( float(NODE_DATA(0)) );
-    // imageAtomicExchange(tFragmentListHead, ivec2(gl_FragCoord.xy), 32);
-  // }
-  // ps_outputColor = vec4(1,1,0,1);
+  if (g_RenderMode == RENDER_MODE_FILL_ONE_COLOR) {
+    ps_outputColor = vec4(1,1,0,1);
+  } else if (g_RenderMode == RENDER_MODE_PPLL_DEPTH) {
+    uint depth = debug_count_list_len(gl_FragCoord.xy);
+    float fac = clamp(float(depth) / MAX_DEBUG_LIST_DEPTH, 0, 1);
+    ps_outputColor = vec4(mix(DEBUG_LIST_0, DEBUG_LIST_1, fac), 1);
+  } else {
+    ps_outputColor = GatherLinkedList(gl_FragCoord.xy);
+  }
 }
 
 
 // unroll K-buffer
 /*
-vec4 ComputeSushiRGBA(vec2 pixelCoord, float depth, vec4 vTangentCoverage, vec3 baseColor) {
-  vec3 vTangent = 2.0 * vTangentCoverage.xyz - 1.0;
-  vec3 vNDC = ScreenToNDC(vec3(pixelCoord, depth), g_vViewport);
-  vec3 vPositionWS = NDCToWorld(vNDC, g_mInvViewProj);
-  vec3 vViewWS = g_vEye - vPositionWS;
 
-  // TODO remove params, since we are using globals anyways.
-  HairShadeParams params;
-
-  params.cColor = baseColor;
-  params.fRadius = g_FiberRadius;
-  params.fSpacing = g_FiberSpacing;
-  params.fAlpha = g_HairShadowAlpha;
-
-  vec3 color = AccumulateHairLight(vTangent, vPositionWS, vViewWS, params);
-  return vec4(color, vTangentCoverage.w);
- return vec4(baseColor, 1.0);
-}
-#define HEAD_SHADING ComputeSushiRGBA
-#define TAIL_SHADING ComputeSushiRGBA
 */

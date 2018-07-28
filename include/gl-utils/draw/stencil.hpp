@@ -26,22 +26,9 @@ namespace glUtils {
   };
   typedef GLenum StencilOperation_;
 
-  struct StencilSettings {
+  struct StencilPerSide {
     /** Comparison against the existing value in the stencil buffer. */
     StencilTest_ test = StencilTest::AlwaysPass;
-
-    /**
-     * Reference value, can be used to:
-     *   * compare to in stencil test
-     *   * write to stencil buffer (StencilOperation::Replace)
-     */
-    i32 reference_value = 0;
-
-    /** used for compare, see last arg to glStencilFunc. Also known as ReadMask */
-    u32 compare_mask = 0xffffffff;
-
-    /** Allows specifying a mask when writing data on the stencil buffer. Also known as WriteMask */
-    u32 write_bytes = 0xffffffff;
 
     /** Specifies the operation to do when a fragment fails the stencil test. */
     StencilOperation_ op_stencil_fail = StencilOperation::Keep;
@@ -53,17 +40,51 @@ namespace glUtils {
     StencilOperation_ op_pass = StencilOperation::Keep;
   };
 
-  inline bool operator==(const StencilSettings& a, const StencilSettings& b) {
+
+  /**
+   * Stencil test procedure:
+   *   (StencilRefVal & CompareMask) CompTestFunc (StencilBufferValue & CompareMask)
+   * Stencil write new value procedure:
+   *   (~StencilWriteMask & StencilBufferValue) | (StencilWriteMask & StencilOp(StencilBufferValue))
+   *
+   * Inspired by D3D11_DEPTH_STENCIL_DESC
+   */
+  struct Stencil {
+    /**
+     * Reference value, can be used to:
+     *   * compare to in stencil test
+     *   * write to stencil buffer (StencilOperation::Replace)
+     */
+    GLint reference_value = 0;
+
+    /** used for compare, see last arg to glStencilFunc. Also known as ReadMask */
+    GLuint compare_mask = 0xffffffff;
+
+    /** Allows specifying a mask when writing data on the stencil buffer. Also known as WriteMask */
+    GLuint write_bytes = 0xffffffff;
+
+    StencilPerSide front;
+    StencilPerSide back;
+  };
+
+  inline bool operator==(const StencilPerSide& a, const StencilPerSide& b) {
     return (a.test == b.test)
-        && (a.reference_value == b.reference_value)
-        && (a.compare_mask == b.compare_mask)
-        && (a.write_bytes == b.write_bytes)
         && (a.op_stencil_fail == b.op_stencil_fail)
         && (a.op_stencil_pass_depth_fail == b.op_stencil_pass_depth_fail)
         && (a.op_pass == b.op_pass);
   }
+  inline bool operator!=(const StencilPerSide& a, const StencilPerSide& b) {
+    return !(a == b);
+  }
 
-  inline bool operator!=(const StencilSettings& a, const StencilSettings& b) {
+  inline bool operator==(const Stencil& a, const Stencil& b) {
+    return (a.reference_value == b.reference_value)
+        && (a.compare_mask == b.compare_mask)
+        && (a.write_bytes == b.write_bytes)
+        && (a.front == b.front)
+        && (a.back == b.back);
+  }
+  inline bool operator!=(const Stencil& a, const Stencil& b) {
     return !(a == b);
   }
 

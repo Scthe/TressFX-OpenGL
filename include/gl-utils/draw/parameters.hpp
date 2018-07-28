@@ -1,17 +1,17 @@
 #pragma once
 
-// #include "blend.hpp"
+#include "blend.hpp"
 #include "depth.hpp"
 #include "stencil.hpp"
 
 namespace glUtils {
 
-  struct BackfaceCullingMode {
-    static const GLenum CullingDisabled = GL_NONE;
-    static const GLenum CullCounterClockwise = GL_FRONT;
-    static const GLenum CullClockwise = GL_BACK;
+  struct CullingMode {
+    static const GLenum None = GL_NONE; // show all
+    static const GLenum CullFront = GL_FRONT; // CCW, hides front-facing faces
+    static const GLenum CullBack = GL_BACK; // CW, hides back-facing faces
   };
-  typedef GLenum BackfaceCullingMode_;
+  typedef GLenum CullingMode_;
 
   struct PolygonMode {
     static const GLenum Point = GL_POINT;
@@ -31,19 +31,18 @@ namespace glUtils {
    */
   struct DrawParameters {
     Depth depth;
-    StencilSettings stencil_clockwise; // BACK
-    StencilSettings stencil_counter_clockwise; // FRONT
+    Stencil stencil;
+    Blend blend;
     f32 line_width = 1.0f;
     f32 point_size =  1.0f;
     PolygonMode_ polygon_mode = PolygonMode::Fill;
     bool dithering = false; // smoothen transition between colors
-    BackfaceCullingMode_ backface_culling = BackfaceCullingMode::CullClockwise;
+    CullingMode_ culling = CullingMode::CullBack;
 
     // It also affects glClear!
     bool color_write[4] = {true, true, true, true};
 
     // Unimplemented:
-    // Blend blend;
     // Smooth smooth; // Requires blending to be on
     // bool multisampling = false; // better do at window creation
     // ? polygon_offset; // glPolygonOffset
@@ -55,7 +54,6 @@ namespace glUtils {
     // params.transform_feedback_primitives_written_query =  None;
     // params.condition =  None;
     // params.transform_feedback =  None;
-    // params.smooth =  None;
     // params.provoking_vertex =  ProvokingVertex::LastVertex;
     // params.primitive_bounding_box =  (-1.0 .. 1.0, -1.0 .. 1.0, -1.0 .. 1.0, -1.0 .. 1.0);
     // params.primitive_restart_index =  false;

@@ -10,8 +10,6 @@
 // #include "SushiGPUInterface.h"
 // #include "SushiUtils.h"
 
-#include <glm/gtc/matrix_transform.hpp> // TODO remove
-
 namespace glTFx {
 
   void TFxPPLL::initialize(int width, int height,
@@ -20,36 +18,34 @@ namespace glTFx {
   {
     // see oHair.sufx
     m_pBuildPSO.shader = pStrandEffect;
-    m_pBuildPSO.draw_params.depth.write = false;
-    // m_pBuildPSO.draw_params.depth.test = glUtils::DepthTest::IfLess;
-    m_pBuildPSO.draw_params.depth.test = glUtils::DepthTest::AlwaysPass;
-    // m_pBuildPSO.draw_params.polygon_mode = glUtils::PolygonMode::Point;
-    // m_pBuildPSO.draw_params.polygon_mode = glUtils::PolygonMode::Line;
-    // m_pBuildPSO.draw_params.point_size = 3.0f;
-    m_pBuildPSO.draw_params.backface_culling = glUtils::BackfaceCullingMode::CullingDisabled;
-    m_pBuildPSO.draw_params.color_write[0] = false;
-    m_pBuildPSO.draw_params.color_write[1] = false;
-    m_pBuildPSO.draw_params.color_write[2] = false;
-    m_pBuildPSO.draw_params.color_write[3] = false;
-    m_pBuildPSO.draw_params.stencil_counter_clockwise.op_pass = glUtils::StencilOperation::Increment; // front
-    m_pBuildPSO.draw_params.stencil_clockwise.op_pass = glUtils::StencilOperation::Increment; // back
+    auto& dp0 = m_pBuildPSO.draw_params;
+    dp0.depth.write = false;
+    // dp0.depth.test = glUtils::DepthTest::IfLess;
+    dp0.depth.test = glUtils::DepthTest::AlwaysPass;
+    dp0.culling = glUtils::CullingMode::None;
+    dp0.color_write[0] = false;
+    dp0.color_write[1] = false;
+    dp0.color_write[2] = false;
+    dp0.color_write[3] = false;
+    dp0.stencil.front.op_pass = glUtils::StencilOperation::Increment;
+    dp0.stencil.back.op_pass = glUtils::StencilOperation::Increment;
 
     // see qHair.sufx
     m_pReadPSO.shader = pQuadEffect;
-    m_pReadPSO.draw_params.backface_culling = glUtils::BackfaceCullingMode::CullingDisabled;
-    m_pReadPSO.draw_params.depth.write = false;
-    m_pReadPSO.draw_params.depth.test = glUtils::DepthTest::AlwaysPass;
-    m_pReadPSO.draw_params.color_write[0] = true;
-    m_pReadPSO.draw_params.color_write[1] = true;
-    m_pReadPSO.draw_params.color_write[2] = true;
-    m_pReadPSO.draw_params.color_write[3] = true;
-    m_pReadPSO.draw_params.stencil_counter_clockwise.write_bytes = 0; // front
-    m_pReadPSO.draw_params.stencil_clockwise.write_bytes = 0; // back
+    auto& dp1 = m_pReadPSO.draw_params;
+    dp1.depth.write = false;
+    dp1.depth.test = glUtils::DepthTest::AlwaysPass;
+    dp1.culling = glUtils::CullingMode::None;
+    dp1.blend.color.function = glUtils::BlendingFunction::Addition;
+    dp1.blend.color.new_value_factor = glUtils::BlendingFactor::One; // src
+    dp1.blend.color.current_value_factor = glUtils::BlendingFactor::SourceAlpha; // dest
+    dp1.blend.alpha.function = glUtils::BlendingFunction::Addition;
+    dp1.blend.alpha.new_value_factor = glUtils::BlendingFactor::Zero; // src
+    dp1.blend.alpha.current_value_factor = glUtils::BlendingFactor::Zero; // dest
     // we incr in 1st pass, so if ref is 0 then any pixel that was touched will have value >ref
     // OTOH any NOT touched in 1st pass will still have 0, which is equall to ref
-    // m_pReadPSO.draw_params.stencil_counter_clockwise.test = glUtils::StencilTest::IfRefIsLessThenCurrent;
-    // m_pReadPSO.draw_params.stencil_clockwise.test = glUtils::StencilTest::IfRefIsLessThenCurrent;
-    // TODO blending
+    dp1.stencil.front.test = glUtils::StencilTest::IfRefIsLessThenCurrent;
+    dp1.stencil.back.test = glUtils::StencilTest::IfRefIsLessThenCurrent;
 
     // done
     m_pPPLL = new TressFXPPLL;
@@ -75,10 +71,17 @@ namespace glTFx {
     glUtils::set_uniform(shader, "g_MatBaseColor", static_cast<glm::vec4>(settings.root_color), true);
     glm::vec4 tip_color = settings.use_separate_tip_color ? settings.tip_color : settings.root_color;
     glUtils::set_uniform(shader, "g_MatTipColor", static_cast<glm::vec4>(tip_color), true);
+    glUtils::set_uniform(shader, "g_ColorShiftScale", settings.strand_hue_rand_scale, true);
     glUtils::set_uniform(shader, "g_WinSize", glm::vec2(state.win_width, state.win_height), true);
     glUtils::set_uniform(shader, "g_vEye", state.camera.get_position(), true);
     glm::mat4 mvp = camera.projection * camera.view * settings.model_matrix;
     glUtils::set_uniform(shader, "g_mVP", mvp, false, true);
+  }
+
+  static void update_uniforms_resolve (glUtils::Shader& shader, GlobalState& state) {
+    auto& settings = state.tfx_settings;
+    // auto& camera = state.camera;
+    glUtils::set_uniform(shader, "g_RenderMode", (int)settings.render_mode);
   }
 
   void TFxPPLL::draw(std::vector<TFxHairStrands*>& hairStrands, u32 nodePoolSize) {
@@ -88,26 +91,26 @@ namespace glTFx {
         "with ptr to GlobalState before TFxPPLL::draw was called");
     GFX_FAIL_IF(!m_pBuildPSO.shader, "m_pBuildPSO should have been initialized"
         "with ptr to shader before TFxPPLL::draw was called");
-    auto& shader = *m_pBuildPSO.shader;
+    auto& shader0 = *m_pBuildPSO.shader;
 
     // build ppll
-    glUseProgram(m_pBuildPSO.shader->gl_id);
+    glUseProgram(shader0.gl_id);
     commandContext.state->update_draw_params(m_pBuildPSO.draw_params);
     m_pPPLL->Clear(commandContext);
     m_pPPLL->BindForBuild(commandContext);
-    update_uniforms_build(shader, *commandContext.state, nodePoolSize);
+    update_uniforms_build(shader0, *commandContext.state, nodePoolSize);
 
     LOGD << "PPLL pass1 preparations complete, will draw " << hairStrands.size() << " strands";
     for (size_t i = 0; i < hairStrands.size(); i++) {
       TressFXHairObject* pHair = hairStrands[i]->get_AMDTressFXHandle();
       if (pHair) {
-        glUtils::set_uniform(shader, "g_NumVerticesPerStrand", pHair->GetNumVerticesPerStrand());
+        glUtils::set_uniform(shader0, "g_NumVerticesPerStrand", pHair->GetNumVerticesPerStrand());
         pHair->DrawStrands(commandContext, m_pBuildPSO);
       }
     }
     m_pPPLL->DoneBuilding(commandContext);
 
-    LOGI << "PPLL pass1 complete, will do pass2 (fullscreen pass)";
+    LOGD << "PPLL pass1 complete, will do pass2 (fullscreen pass)";
 
     // build ppll cleanup
     for (size_t i = 0; i < hairStrands.size(); i++){
@@ -115,8 +118,11 @@ namespace glTFx {
     }
 
     // draw ppll
-    glUseProgram(m_pReadPSO.shader->gl_id);
+    auto& shader1 = *m_pReadPSO.shader;
+    glUseProgram(shader1.gl_id);
     m_pPPLL->BindForRead(commandContext);
+    update_uniforms_resolve(shader1, *commandContext.state);
+
     if (hairStrands.size() > 0) {
       commandContext.state->update_draw_params(m_pReadPSO.draw_params);
       // glBindVertexArray(0); // WHATEVER, WE WILL NOT USE IT ANYWAY!

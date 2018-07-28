@@ -16,7 +16,7 @@ uniform vec3 g_vEye;
 out vec4 ps_Position;
 out vec4 ps_Tangent;
 out vec4 ps_p0p1;
-out vec3 ps_strandColor;
+out vec4 ps_strandColor;
 
 void main(void) {
   TressFXVertex tressfxVert = GetExpandedTressFXVert(gl_VertexID, g_vEye, g_mVP);
