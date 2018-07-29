@@ -18,7 +18,11 @@ bin/glslcompiler
 *.cap
 
 # models etc. - too big!
-assets
+assets/*
+!assets/sintel_lite_v2_1
+assets/sintel_lite_v2_1/*
+!assets/sintel_lite_v2_1/tfx_exporter.py
+
 imgui.ini
 
 # PDFs / AMD repo etc.
