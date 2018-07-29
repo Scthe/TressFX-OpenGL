@@ -93,6 +93,7 @@ static void update_uniforms_simulation (glUtils::Shader& shader, GlobalState& st
     glUtils::set_uniform(shader, "g_SimInts", g_SimInts);
     glUtils::set_uniform(shader, "g_Counts", g_Counts);
     glUtils::set_uniform(shader, "g_VSP", g_VSP);
+    glUtils::set_uniform(shader, "g_FollowHairRootOffsetMultiplier", settings.follow_hair_root_offset_multiplier);
 }
 
 // All our compute shaders have dimensions of (N,1,1)

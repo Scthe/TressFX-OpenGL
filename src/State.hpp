@@ -35,9 +35,10 @@ struct GlobalState {
   glTFx::TFxSettings tfx_settings;
 
   // scene
-  const std::string obj_path = "assets/PonytailModel/ponytail.obj";
   const std::string obj_vs = "src/shaders/simple_obj.vert.glsl";
   const std::string obj_fs = "src/shaders/simple_obj.frag.glsl";
+  bool show_model = true;
+
 
   // background
   const std::string bg_vs = "src/shaders/bg.vert.glsl";

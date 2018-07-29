@@ -3,120 +3,92 @@
 struct Geometry {
   VAO vao;
   RawBuffer vertex_buffer;
-  RawBuffer normal_buffer;
   RawBuffer index_buffer;
-  Shader shader;
   u32 triangles = 0;
 };
 
-/*struct SimpleVertex {
+struct SimpleVertex {
   glm::vec3 position;
   glm::vec3 normal;
-};*/
+};
 
-static void load_obj (const GlobalState& state, Geometry& geo) {
+static Geometry create_geometry (const char*const obj_path) {
   tinyobj::attrib_t attrib;
   std::vector<tinyobj::shape_t> shapes;
 
   std::string err;
-  bool ret = tinyobj::LoadObj(&attrib, &shapes, nullptr, &err, state.obj_path.c_str());
-
-  if (!ret || !err.empty()) {
-    LOGE << err;
-    exit(1);
-  }
+  bool ret = tinyobj::LoadObj(&attrib, &shapes, nullptr, &err, obj_path);
+  GFX_FAIL_IF(!ret || !err.empty(), err);
   GFX_FAIL_IF(shapes.size() != 1, ".obj contains != 1 shapes. Please join all models in the scene");
 
   const auto& shape = shapes[0];
   const auto& mesh = shape.mesh;
-  LOGI << "Loaded obj '" << state.obj_path << "'. Mesh '" << shape.name
-       << "', vertices: " << attrib.vertices.size()
-       << ", triangles: " << mesh.indices.size() / 3;
+  LOGI << "Loaded obj '" << obj_path << "' :: '" << shape.name
+       << " (vertices=" << attrib.vertices.size()
+       << ", traingles=" << mesh.indices.size() / 3 <<  ")";
 
-  // pack positions and normals (see definition of index_t)
-  // SimpleVertex* verts = (SimpleVertex*)malloc(sizeof(SimpleVertex) * mesh.indices.size());
-  std::vector<unsigned int> indices;
+  std::vector<SimpleVertex> vertices;
+  std::vector<u32> indices;
+
   for (size_t i = 0; i < mesh.indices.size(); i++) {
     const auto& idx = mesh.indices[i];
-    indices.push_back((unsigned int) idx.vertex_index);
+    indices.push_back(i);
 
-    /*SimpleVertex vv = {
-      {
-        attrib.vertices[idx.vertex_index*3 + 0],
-        attrib.vertices[idx.vertex_index*3 + 1],
-        attrib.vertices[idx.vertex_index*3 + 2]
-      }, {
-        attrib.normals[idx.normal_index*3 + 0],
-        attrib.normals[idx.normal_index*3 + 1],
-        attrib.normals[idx.normal_index*3 + 2]
-      }
+    const u32 vert_idx = idx.vertex_index * 3;
+    glm::vec3 pos = {
+      attrib.vertices[vert_idx],
+      attrib.vertices[vert_idx + 1],
+      attrib.vertices[vert_idx + 2]
     };
-    verts[idx.vertex_index] = vv;*/
+    const u32 norm_idx = idx.normal_index * 3;
+    glm::vec3 norm = {
+      attrib.normals[norm_idx],
+      attrib.normals[norm_idx + 1],
+      attrib.normals[norm_idx + 2]
+    };
+
+    vertices.push_back({ pos, norm });
   }
 
-  u32 mem_idx = indices.size() * sizeof(int);
+  Geometry geo;
 
   // load to gpu
-  u32 mem_verts = attrib.vertices.size() * sizeof(float);
-  u32 mem_norm = attrib.normals.size() * sizeof(float);
-  geo.vertex_buffer  = glUtils::malloc(mem_verts, BufferUsagePattern::Default);
-  geo.normal_buffer  = glUtils::malloc(mem_norm, BufferUsagePattern::Default);
-  glUtils::write(geo.vertex_buffer,  {0, mem_verts}, &attrib.vertices.at(0));
-  glUtils::write(geo.normal_buffer,  {0, mem_norm}, &attrib.normals.at(0));
-  // SimpleVertex
-  // u32 mem_simple_vert = sizeof(SimpleVertex) * mesh.indices.size();
-  // geo.vertex_buffer  = glUtils::malloc(mem_simple_vert, BufferUsagePattern::Default);
-  // glUtils::write(geo.vertex_buffer,  {0, mem_simple_vert}, verts);
-  // index buffer
-  geo.triangles = indices.size() / 3;
-  geo.index_buffer = glUtils::malloc(mem_idx, BufferUsagePattern::Default);
-  glUtils::write(geo.index_buffer, {0, mem_idx},   &indices.at(0));
+  u32 mem_verts = vertices.size() * sizeof(SimpleVertex);
+  geo.vertex_buffer = glUtils::malloc(mem_verts, BufferUsagePattern::Default);
+  glUtils::write(geo.vertex_buffer,  {0, mem_verts}, &vertices.at(0));
+
   // vao
   geo.vao = glUtils::create_vao({
-    {&geo.vertex_buffer, {GL_FLOAT,3}, 0, 3*sizeof(float)}, // position
-    {&geo.normal_buffer, {GL_FLOAT,3}, 0, 3*sizeof(float)} // normals
-    // {&geo.vertex_buffer, {GL_FLOAT,3}, 0, 6*sizeof(float)}, // position
-    // {&geo.vertex_buffer, {GL_FLOAT,3}, 3*sizeof(float), 6*sizeof(float)} // normals
+    {&geo.vertex_buffer, {GL_FLOAT,3}, 0,                 sizeof(SimpleVertex)}, // position
+    {&geo.vertex_buffer, {GL_FLOAT,3}, sizeof(glm::vec3), sizeof(SimpleVertex)} // normals
   });
 
-  // free(verts);
+  // index buffer
+  geo.triangles = indices.size() / 3;
+  u32 mem_idx = indices.size() * sizeof(int);
+  geo.index_buffer = glUtils::malloc(mem_idx, BufferUsagePattern::Default);
+  glUtils::write(geo.index_buffer, {0, mem_idx}, &indices.at(0));
+
+  return geo;
 }
 
-static Geometry load_scene (const GlobalState& state) {
-  Geometry head_model;
-  load_obj(state, head_model);
-  create_shader(head_model.shader, state.obj_vs, state.obj_fs);
-  return head_model;
-}
-
-static void draw_scene (GlobalState& state, const Geometry& geo) {
-  // shader & PSO
-  glUseProgram(geo.shader.gl_id); // TODO move glUseProgram into set_uniform?
-  glUtils::DrawParameters params;
-  // params.backface_culling = BackfaceCullingMode::CullingDisabled;
-  // params.polygon_mode = PolygonMode::Edge;
-  state.update_draw_params(params);
+static void draw_geometry (const GlobalState& state, const Shader& shader, const Geometry& geo) {
+  glUseProgram(shader.gl_id);
 
   // uniforms
-  // glm::mat4 matProj = glm::perspective(glm::radians(state.fov_dgr), state.aspect_ratio(), state.zNear, state.zFar);
-  // glm::mat4 matView = glm::lookAt(state.cam_pos, state.cam_target, {0,1,0});
-  glm::mat4 matProj = state.camera.projection;
-  glm::mat4 matView = state.camera.view;
-  glUtils::set_uniform(geo.shader, "g_matProj", matProj);
-  glUtils::set_uniform(geo.shader, "g_matView", matView);
-
-  // geo
-  glBindVertexArray(geo.vao.gl_id);
-  glBindBuffer(glUtils::BufferBindType::IndexBuffer, geo.index_buffer.gl_id);
-
+  const auto& camera = state.camera;
+  const auto model_mat = state.tfx_settings.model_matrix;
+  auto mvp = camera.projection * camera.view * model_mat;
+  glUtils::set_uniform(shader, "g_MVP", mvp);
 
   // draw
+  glBindVertexArray(geo.vao.gl_id);
+  glBindBuffer(glUtils::BufferBindType::IndexBuffer, geo.index_buffer.gl_id);
   glDrawElements(GL_TRIANGLES, geo.triangles * 3, GL_UNSIGNED_INT, nullptr);
 }
 
-static void destroy_scene(Geometry& geo) {
+static void destroy_geometry(Geometry& geo) {
   destroy(geo.vao);
   destroy(geo.vertex_buffer);
-  destroy(geo.normal_buffer);
   destroy(geo.index_buffer);
 }

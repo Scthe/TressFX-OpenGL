@@ -56,10 +56,6 @@ void TressFXSimulation::Simulate(EI_CommandContextRef commandContext, TressFXHai
     // For dispatching one thread per one strand
     int numOfGroupsForCS_StrandLevel = (int)(((float)(hairObject.m_NumTotalStrands) / (float)TRESSFX_SIM_THREAD_GROUP_SIZE));
 
-    // Binding
-    // Move to EI_Dispatch
-    // EI_Bind(commandContext, GetSimPosTanLayout(), hairObject.mPosTanCollection.GetSimBindSet());
-    // EI_Bind(commandContext, GetSimLayout(), *hairObject.m_pSimBindSet);
 
     // IntegrationAndGlobalShapeConstraints
     {

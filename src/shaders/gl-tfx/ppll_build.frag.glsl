@@ -43,6 +43,8 @@ void main () {
 			ps_Position.z // depth
 		);
 	}
+
+	// out_color = vec4(0.16, 0.45, 0.64, 1.0);
 }
 
 // paging algo breakdown(very rough draft):

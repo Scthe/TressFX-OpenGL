@@ -18,16 +18,11 @@ vec3 gammaFix (vec3 color, float gamma) {
 }
 
 void main(void) {
-  float dd = dot(normalize(v_Normal), normalize(LIGHT_POS));
-  /*
-  if (dd < 0.0) {
-    gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
-    // discard;
-  } else {
-    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-  }
-  */
+  // vec3 X = dFdx(v_Pos);
+  // vec3 Y = dFdy(v_Pos);
+  // vec3 v_Normal = normalize(cross(X,Y));
 
+  float dd = dot(normalize(v_Normal), normalize(LIGHT_POS));
   float phong = max(0, dd);
   vec3 direct_light = vec3(phong) * LIGHT_FALLOFF;
   vec3 color = AMBIENT + direct_light;

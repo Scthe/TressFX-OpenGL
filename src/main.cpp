@@ -70,21 +70,43 @@ void draw_wind (GlobalState& state, const Shader& shader) {
   glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
-void init_tfx_settings(glTFx::TFxSettings& settings) {
+void init_tfx_settings(GlobalState& state, std::vector<Geometry>& scene_objects, bool use_sintel) {
+  auto& settings = state.tfx_settings;
   auto& sim = settings.simulation_settings;
 
   settings.root_color = {0.03, 0.07, 0.25, 1.0};
   settings.tip_color = {0.16, 0.45, 0.64, 1.0};
 
-  // model matrix
-  glm::mat4 m(1);
-  const float model_scale = 0.01;
-  m = glm::scale(m, glm::vec3(model_scale, model_scale, model_scale));
-  settings.model_matrix = glm::translate(m, {0,-60,0}); // scale is absurd
+  if (use_sintel) {
+    // sintel
+    const float model_scale = 0.01;
+    settings.object_name = "sintel_hair";
+    settings.filepath = "assets\\sintel_lite_v2_1\\GEO-sintel_hair_emit.001-sintel_hair.tfx";
+    // settings.filepath = "assets\\sintel_lite_v2_1\\0TestHair-TestHair.tfx";
+    settings.hair_thickness = 0.12;
+    sim.m_gravityMagnitude = 0.0f;
+    sim.m_damping = 1.0f;
+    settings.follow_hair_root_offset_multiplier = 0.004 / model_scale;
+    // model matrix
+    glm::mat4 m(1);
+    m = glm::scale(m, glm::vec3(model_scale, model_scale, model_scale));
+    settings.model_matrix = glm::translate(m, {0,-0.35 / model_scale, 0});
+    // objects
+    // scene_objects.push_back(create_geometry("assets\\sintel_lite_v2_1\\cube.obj"));
+    scene_objects.push_back(create_geometry("assets\\sintel_lite_v2_1\\sintel.obj"));
+    scene_objects.push_back(create_geometry("assets\\sintel_lite_v2_1\\sintel_eyeballs.obj"));
+    state.show_model = false;
 
-  settings.gravity_multipler = 30.0f;
-  sim.m_gravityMagnitude = 1.0f;
-  // sim.m_windDirection[0] = -1.0f;
+  } else {
+    // mohawk - AMD standard model
+    const float model_scale = 0.01;
+    settings.gravity_multipler = 30.0f;
+    sim.m_gravityMagnitude = 1.0f;
+    // model matrix
+    glm::mat4 m(1);
+    m = glm::scale(m, glm::vec3(model_scale, model_scale, model_scale));
+    settings.model_matrix = glm::translate(m, {0,-60,0}); // scale is absurd
+  }
 }
 
 ///
@@ -94,13 +116,13 @@ void init_tfx_settings(glTFx::TFxSettings& settings) {
 
 int main(int argc, char *argv[]) {
   // logger::Log::ReportingLevel = logger::Trace;
-  logger::Log::ReportingLevel = logger::Warning;
-  // logger::Log::ReportingLevel = logger::Error;
+  // logger::Log::ReportingLevel = logger::Warning;
+  logger::Log::ReportingLevel = logger::Error;
 
   GlobalState state;
-  init_tfx_settings(state.tfx_settings);
 
   // create window
+  // (NO GL FUNCTION BEFORE THIS!)
   WindowInitOpts opts;
   opts.title = state.title;
   opts.w = state.win_width;
@@ -108,10 +130,12 @@ int main(int argc, char *argv[]) {
   auto window = create_window(opts);
   LOGI << "Created window: " << window.screen_size[0] << "x" << window.screen_size[1];
   imgui_init(window);
+
+  // init state
+  std::vector<Geometry> scene_objects;
+  init_tfx_settings(state, scene_objects, true);
   apply_draw_parameters(state.draw_params, nullptr);
   create_dummy_vao(state.dummy_vao);
-  glClearColor(0.5, 0.5, 0.5, 0.5);
-  glClearStencil(0);
 
   // set opengl debug print policy
   DebugBehaviourForType debug_beh;
@@ -125,14 +149,17 @@ int main(int argc, char *argv[]) {
   tfx_sample.init();
 
   // scene geometry
-  // Geometry scene_geometry = load_scene(state);
   // Shader bg_shader;
   // create_shader(bg_shader, state.bg_vs, state.bg_fs);
   const std::string wind_vs = "src/shaders/wind.vert.glsl";
   const std::string wind_fs = "src/shaders/wind.frag.glsl";
   Shader wind_shader;
   create_shader(wind_shader, wind_vs, wind_fs);
+  Shader scene_object_shader;
+  create_shader(scene_object_shader, state.obj_vs, state.obj_fs);
 
+  glClearColor(0.5, 0.5, 0.5, 0.5);
+  glClearStencil(0);
 
   // run
   while(state.running) {
@@ -159,7 +186,11 @@ int main(int argc, char *argv[]) {
     // we could use stencils to make it more optimized, but ./shrug
     // draw_bg(state, bg_shader);
     draw_wind(state, wind_shader);
-    // draw_scene(state, scene_geometry);
+    if (state.show_model) {
+      for (auto& geo : scene_objects) {
+        draw_geometry(state, scene_object_shader, geo);
+      }
+    }
 
     // tfx
     tfx_sample.simulate(0.0);
@@ -176,7 +207,9 @@ int main(int argc, char *argv[]) {
   }
 
   // Cleanup
-  // destroy_scene(scene_geometry);
+  for (auto& scene_obj : scene_objects) {
+    destroy_geometry(scene_obj);
+  }
   imgui_destroy();
   destroy(window);
 

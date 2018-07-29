@@ -5,6 +5,8 @@
 #pragma include "sim/_SimCommon.comp.glsl"
 #pragma include "sim/_SimBuffers.comp.glsl"
 
+uniform float g_FollowHairRootOffsetMultiplier;
+
 shared vec4 sharedPos[THREAD_GROUP_SIZE];
 shared vec4 sharedTangent[THREAD_GROUP_SIZE];
 
@@ -30,7 +32,7 @@ void main() {
       float lenFromRoot = float(vertData.vertexId) / float(numVerticesInTheStrand); // in [0,1]
       float factor = g_TipSeparationFactor * lenFromRoot + 1.0f;
       // delta from guide-hair
-      vec3 offset = factor * g_FollowHairRootOffset_[globalFollowStrandIndex].xyz;
+      vec3 offset = factor * g_FollowHairRootOffset_[globalFollowStrandIndex].xyz * g_FollowHairRootOffsetMultiplier;
 	    vec3 followPos = sharedPos[vertData.localId].xyz + offset;
 
       // write back

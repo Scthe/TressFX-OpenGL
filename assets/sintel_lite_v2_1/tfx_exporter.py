@@ -123,7 +123,7 @@ class StrandVertexDistributor:
     return d
 
   def _create_point(self, co, is_movable):
-    return [*co, 0.0 if is_movable else 1.0]
+    return [*co, 1.0 if is_movable else 0.0]
 
 def export_hair(particle_modifier, verts_per_strand):
   particle_system = particle_modifier.particle_system

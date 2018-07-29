@@ -72,6 +72,7 @@ void imgui_update (GlWindow& window, GlobalState& state) {
     // Render subtree
     if (ImGui::CollapsingHeader("Render color", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Indent(section_indent);
+      ImGui::Checkbox("Toggle model", &state.show_model);
       ImGui::ColorEdit3("Hair color", (float*)&tfx_settings.root_color, color_flags);
       ImGui::SliderFloat("Root opacity", (float*)&tfx_settings.root_color.a, 0.0f, 1.0f);
       ImGui::ColorEdit3("Hair tip color", (float*)&tfx_settings.tip_color, color_flags);
@@ -113,6 +114,7 @@ void imgui_update (GlWindow& window, GlobalState& state) {
       // ImGui::SliderFloat("Length stiffness", &sim_settings.hair_thickness, 0.0f, 1.0f);
       ImGui::SliderInt("Length iterations", &sim_settings.m_lengthConstraintsIterations, 0, 5);
       ADD_TOOLTIP("(Length Constraint) Fixing hairs that are too long/short");
+      // ImGui::SliderFloat("FollowMultip", &tfx_settings.follow_hair_root_offset_multiplier, 0.0f, 0.2f);
       ImGui::Unindent(section_indent);
     }
     INSERT_SPACING_HERE

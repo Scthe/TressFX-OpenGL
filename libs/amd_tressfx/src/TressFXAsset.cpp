@@ -38,6 +38,20 @@
 
 using namespace AMD::TRESSFX;
 
+static void debug_tfx_header (const TressFXTFXFileHeader& header) {
+  std::string msg = "Tfx header:\n";
+  msg = msg + "version (" + std::to_string(header.version) + "), \n";
+  msg = msg + "numHairStrands (" + std::to_string(header.numHairStrands) + "), \n";
+  msg = msg + "numVerticesPerStrand (" + std::to_string(header.numVerticesPerStrand) + "), \n";
+  msg = msg + "offsetVertexPosition (" + std::to_string(header.offsetVertexPosition) + "), \n";
+  msg = msg + "offsetStrandUV (" + std::to_string(header.offsetStrandUV) + "), \n";
+  msg = msg + "offsetVertexUV (" + std::to_string(header.offsetVertexUV) + "), \n";
+  msg = msg + "offsetStrandThickness (" + std::to_string(header.offsetStrandThickness) + "), \n";
+  msg = msg + "offsetVertexColor (" + std::to_string(header.offsetVertexColor) + ")\n";
+  TressFXLogWarning(msg.c_str());
+  // throw "GFX_FAIL"; // early fail
+}
+
 namespace AMD
 {
     static void GetTangentVectors(const tressfx_vec3& n, tressfx_vec3& t0, tressfx_vec3& t1)
@@ -134,6 +148,7 @@ namespace AMD
         // read the header
         EI_Seek(ioObject, 0); // make sure the stream pos is at the beginning.
         EI_Read((void*)&header, sizeof(TressFXTFXFileHeader), ioObject);
+        // debug_tfx_header(header);
 
         // If the tfx version is lower than the current major version, exit.
         if (header.version < AMD_TRESSFX_VERSION_MAJOR)
@@ -155,7 +170,9 @@ namespace AMD
         // Make sure number of vertices per strand is greater than two and less than or equal to
         // thread group size (64). Also thread group size should be a mulitple of number of
         // vertices per strand. So possible number is 4, 8, 16, 32 and 64.
-        TRESSFX_ASSERT(m_numVerticesPerStrand > 2 && m_numVerticesPerStrand <= TRESSFX_SIM_THREAD_GROUP_SIZE && TRESSFX_SIM_THREAD_GROUP_SIZE % m_numVerticesPerStrand == 0);
+        TRESSFX_ASSERT(m_numVerticesPerStrand > 2
+          && m_numVerticesPerStrand <= TRESSFX_SIM_THREAD_GROUP_SIZE
+          && TRESSFX_SIM_THREAD_GROUP_SIZE % m_numVerticesPerStrand == 0);
 
         m_numFollowStrandsPerGuide = 0;
         m_numTotalStrands = m_numGuideStrands; // Until we call GenerateFollowHairs, the number of total strands is equal to the number of guide strands.

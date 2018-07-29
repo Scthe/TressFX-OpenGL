@@ -20,13 +20,14 @@ namespace glTFx {
     m_pBuildPSO.shader = pStrandEffect;
     auto& dp0 = m_pBuildPSO.draw_params;
     dp0.depth.write = false;
-    // dp0.depth.test = glUtils::DepthTest::IfLess;
-    dp0.depth.test = glUtils::DepthTest::AlwaysPass;
+    dp0.depth.test = glUtils::DepthTest::IfLess;
+    // dp0.depth.test = glUtils::DepthTest::AlwaysPass;
     dp0.culling = glUtils::CullingMode::None;
     dp0.color_write[0] = false;
     dp0.color_write[1] = false;
     dp0.color_write[2] = false;
     dp0.color_write[3] = false;
+    // dp0.polygon_mode = glUtils::PolygonMode::Line;
     dp0.stencil.front.op_pass = glUtils::StencilOperation::Increment;
     dp0.stencil.back.op_pass = glUtils::StencilOperation::Increment;
 
