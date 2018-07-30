@@ -70,7 +70,7 @@ void imgui_update (GlWindow& window, GlobalState& state) {
     INSERT_SPACING_HERE
 
     // Render subtree
-    if (ImGui::CollapsingHeader("Render color", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Render", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Indent(section_indent);
       ImGui::Checkbox("Toggle model", &state.show_model);
       ImGui::ColorEdit3("Hair color", (float*)&tfx_settings.root_color, color_flags);
@@ -79,6 +79,9 @@ void imgui_update (GlWindow& window, GlobalState& state) {
       ImGui::SliderFloat("Tip opacity", (float*)&tfx_settings.tip_color.a, 0.0f, 1.0f);
       ImGui::Checkbox("Use separate tip color", &tfx_settings.use_separate_tip_color);
       ImGui::SliderFloat("Color rand", &tfx_settings.strand_hue_rand_scale, 0.0f, 0.1f);
+      ImGui::SliderFloat("Hair tip split", &sim_settings.m_tipSeparation, 0.0f, 10.0f);
+      ImGui::SliderFloat("Follow multip.", &tfx_settings.follow_hair_root_offset_multiplier, 0.0f, 1.5f);
+      ADD_TOOLTIP("Increase distance between guide and follow hair");
       ImGui::Unindent(section_indent);
     }
     INSERT_SPACING_HERE
@@ -90,13 +93,12 @@ void imgui_update (GlWindow& window, GlobalState& state) {
       ImGui::Checkbox("Use thin tip", &tfx_settings.use_thin_tip);
       ImGui::SliderFloat("Tip thickness ratio", &tfx_settings.hair_thickness_at_tip_ratio, 0.01f, 1.0f);
       ADD_TOOLTIP("0 := tip is very small, 1 := tip is same size as parent. This settting is heavily affected by aliasing-preventing techniques");
-      ImGui::SliderFloat("Hair tip split", &sim_settings.m_tipSeparation, 0.0f, 10.0f);
       ImGui::Unindent(section_indent);
     }
     INSERT_SPACING_HERE
 
     // Simulation subtree
-    if (ImGui::CollapsingHeader("Simulation")) {
+    if (ImGui::CollapsingHeader("Simulation", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Indent(section_indent);
       ImGui::SliderFloat("Gravity", &sim_settings.m_gravityMagnitude, 0.0f, 10.0f);
       ImGui::SliderFloat("Damping", &sim_settings.m_damping, 0.0f, 1.0f);
@@ -114,26 +116,48 @@ void imgui_update (GlWindow& window, GlobalState& state) {
       // ImGui::SliderFloat("Length stiffness", &sim_settings.hair_thickness, 0.0f, 1.0f);
       ImGui::SliderInt("Length iterations", &sim_settings.m_lengthConstraintsIterations, 0, 5);
       ADD_TOOLTIP("(Length Constraint) Fixing hairs that are too long/short");
-      // ImGui::SliderFloat("FollowMultip", &tfx_settings.follow_hair_root_offset_multiplier, 0.0f, 0.2f);
       ImGui::Unindent(section_indent);
     }
     INSERT_SPACING_HERE
 
     // Simulation wind subtree
-    if (ImGui::CollapsingHeader("Simulation wind")) {
+    if (ImGui::CollapsingHeader("Simulation wind", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Indent(section_indent);
       static glm::vec2 wind_angles = {0,0};
       ImGui::SliderFloat("Direction theta", &(wind_angles[1]), 0, 360);
       ImGui::SliderFloat("Direction fi", &(wind_angles[0]), -85, 85);
       update_wind_direction(sim_settings.m_windDirection, wind_angles);
-      ImGui::PushItemWidth(slider_size);
       ImGui::SliderFloat("Force", &sim_settings.m_windMagnitude, 0.0f, 300.0f);
       ImGui::Unindent(section_indent);
     }
     INSERT_SPACING_HERE
 
+    // Collision capsules
+    if (ImGui::CollapsingHeader("Collision capsules")) {
+      ImGui::Indent(section_indent);
+      ImGui::Checkbox("show", &state.show_collision_capsules);
+      ImGui::PushItemWidth(-50);
+      glm::vec2 dim(-50.0, 50.0);
+      glm::vec2 radius(0.0, 30.0);
+      float* cc = &tfx_settings.collision_capsule0[0];
+      ImGui::SliderFloat3("cc0.xyz", cc, dim[0], dim[1]);
+      ImGui::SliderFloat("cc0.r", cc + 3, radius[0], radius[1]);
+      cc = &tfx_settings.collision_capsule1[0];
+      ImGui::SliderFloat3("cc1.xyz", cc, dim[0], dim[1]);
+      ImGui::SliderFloat("cc1.r", cc + 3, radius[0], radius[1]);
+      cc = &tfx_settings.collision_capsule2[0];
+      ImGui::SliderFloat3("cc2.xyz", cc, dim[0], dim[1]);
+      ImGui::SliderFloat("cc2.r", cc + 3, radius[0], radius[1]);
+      cc = &tfx_settings.collision_capsule3[0];
+      ImGui::SliderFloat3("cc3.xyz", cc, dim[0], dim[1]);
+      ImGui::SliderFloat("cc3.r", cc + 3, radius[0], radius[1]);
+      ImGui::PushItemWidth(slider_size);
+      ImGui::Unindent(section_indent);
+    }
+    INSERT_SPACING_HERE
+
     // debug subtree
-    if (ImGui::CollapsingHeader("Debug"), ImGuiTreeNodeFlags_DefaultOpen) {
+    if (ImGui::CollapsingHeader("Debug")) {
       ImGui::Indent(section_indent);
       const char* items[] = {"Normal", "PPLL Binary", "PPLL Overlap"};
       ImGui::Combo("Render mode", &tfx_settings.render_mode, items, IM_ARRAYSIZE(items));

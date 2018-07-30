@@ -84,16 +84,28 @@ static void update_uniforms_simulation (glUtils::Shader& shader, GlobalState& st
     UNUSED,
     UNUSED };
 
-    glUtils::set_uniform(shader, "g_Wind", g_Wind);
-    glUtils::set_uniform(shader, "g_Wind1", g_Wind1);
-    glUtils::set_uniform(shader, "g_Wind2", g_Wind2);
-    glUtils::set_uniform(shader, "g_Wind3", g_Wind3);
-    glUtils::set_uniform(shader, "g_Shape", g_Shape);
-    glUtils::set_uniform(shader, "g_GravTimeTip", g_GravTimeTip);
-    glUtils::set_uniform(shader, "g_SimInts", g_SimInts);
-    glUtils::set_uniform(shader, "g_Counts", g_Counts);
-    glUtils::set_uniform(shader, "g_VSP", g_VSP);
-    glUtils::set_uniform(shader, "g_FollowHairRootOffsetMultiplier", settings.follow_hair_root_offset_multiplier);
+  glUtils::set_uniform(shader, "g_Wind", g_Wind);
+  glUtils::set_uniform(shader, "g_Wind1", g_Wind1);
+  glUtils::set_uniform(shader, "g_Wind2", g_Wind2);
+  glUtils::set_uniform(shader, "g_Wind3", g_Wind3);
+  glUtils::set_uniform(shader, "g_Shape", g_Shape);
+  glUtils::set_uniform(shader, "g_GravTimeTip", g_GravTimeTip);
+  glUtils::set_uniform(shader, "g_SimInts", g_SimInts);
+  glUtils::set_uniform(shader, "g_Counts", g_Counts);
+  glUtils::set_uniform(shader, "g_VSP", g_VSP);
+  glUtils::set_uniform(shader, "g_FollowHairRootOffsetMultiplier", settings.follow_hair_root_offset_multiplier);
+
+  // collision capsule
+  glm::vec4 capsule_data[] = {
+    settings.collision_capsule0,
+    settings.collision_capsule1,
+    settings.collision_capsule2,
+    settings.collision_capsule3
+  };
+  auto variable = shader.get_uniform("g_Capsules[0]");
+  if (variable) {
+    glUniform4fv(variable->gl_location, 4, (float*)&capsule_data);
+  }
 }
 
 // All our compute shaders have dimensions of (N,1,1)

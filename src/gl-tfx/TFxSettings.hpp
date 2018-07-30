@@ -52,6 +52,12 @@ namespace glTFx {
     // Since these are just vector offsets from guide strand,
     // we can manipulate them easily
     float follow_hair_root_offset_multiplier = 1.0;
+
+    // [x,y,z, radius]
+    glm::vec4 collision_capsule0 = glm::vec4(0,0,0,0);
+    glm::vec4 collision_capsule1 = glm::vec4(0,0,0,0);
+    glm::vec4 collision_capsule2 = glm::vec4(0,0,0,0);
+    glm::vec4 collision_capsule3 = glm::vec4(0,0,0,0);
   };
 
 } // namespace glTFx

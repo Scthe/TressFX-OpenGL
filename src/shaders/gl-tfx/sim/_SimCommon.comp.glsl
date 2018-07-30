@@ -14,7 +14,9 @@
 #define USE_MESH_BASED_HAIR_TRANSFORM 0
 
 // Toggle capsule collisions
+#ifndef TRESSFX_COLLISION_CAPSULES
 #define TRESSFX_COLLISION_CAPSULES 0
+#endif
 
 struct PerVertexData {
   uint localId; // [0-64] unique indexForSharedMem

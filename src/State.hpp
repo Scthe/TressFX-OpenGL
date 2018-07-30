@@ -33,6 +33,7 @@ struct GlobalState {
 
   // TFx
   glTFx::TFxSettings tfx_settings;
+  bool show_collision_capsules = false;
 
   // scene
   const std::string obj_vs = "src/shaders/simple_obj.vert.glsl";

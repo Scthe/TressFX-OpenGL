@@ -1,5 +1,7 @@
 #version 450
 
+#define TRESSFX_COLLISION_CAPSULES 1
+
 #pragma include "_utils.glsl"
 #pragma include "sim/_SimParams.comp.glsl"
 #pragma include "sim/_SimCommon.comp.glsl"
@@ -128,10 +130,9 @@ void main() {
 
 
   // Collision handling with capsule objects
-  // vec4 oldPos = g_HairVertexPositionsPrev_[vertData.vertexId_global];
-  // bool bAnyColDetected = ResolveCapsuleCollisions(sharedPos[vertData.localId], oldPos, 0.4);
-  // GroupMemoryBarrierWithGroupSync();
-  bool bAnyColDetected = false; // just to remember to uncomment when testing col. capsules
+  vec4 oldPos = g_HairVertexPositionsPrev_[vertData.vertexId_global];
+  bool bAnyColDetected = ResolveCapsuleCollisions(sharedPos[vertData.localId], oldPos);
+  GroupMemoryBarrierWithGroupSync();
 
 
   // Compute tangent
