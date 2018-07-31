@@ -18,6 +18,15 @@ in vec4 ps_p0p1;
 in vec4 ps_strandColor;
 // out vec4 out_color;
 
+// NOTE: very important
+// Remember we are not writing fragment color, but for all fragments we write
+// to SSBO / image2d. Normally, depth stencil can be done whatever (exp. when
+// fragment's depth is modified in pixel shader). But in our case, if depth/stencil
+// is done too late, we already written to SSBO etc. so yeah, do early
+// depth/stencil here
+layout(early_fragment_tests) in; // [earlydepthstencil]
+
+
 float get_alpha () {
 	float coverage = ComputeCoverage(ps_p0p1.xy, ps_p0p1.zw, gl_FragCoord.xy, g_WinSize);
 	return coverage * ps_strandColor.a;

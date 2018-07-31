@@ -123,11 +123,20 @@ void imgui_update (GlWindow& window, GlobalState& state) {
     // Simulation wind subtree
     if (ImGui::CollapsingHeader("Simulation wind", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Indent(section_indent);
-      static glm::vec2 wind_angles = {0,0};
-      ImGui::SliderFloat("Direction theta", &(wind_angles[1]), 0, 360);
-      ImGui::SliderFloat("Direction fi", &(wind_angles[0]), -85, 85);
-      update_wind_direction(sim_settings.m_windDirection, wind_angles);
-      ImGui::SliderFloat("Force", &sim_settings.m_windMagnitude, 0.0f, 300.0f);
+      ImGui::Checkbox("show", &tfx_settings.show_wind);
+
+      static glm::vec2 wind_angles0 = {0,0};
+      ImGui::SliderFloat("Wind 1 X", &(wind_angles0[1]), 0, 360);
+      ImGui::SliderFloat("Wind 1 Y", &(wind_angles0[0]), -85, 85);
+      update_wind_direction(&(tfx_settings.wind0.x), wind_angles0);
+      ImGui::SliderFloat("Wind 1 force", &tfx_settings.wind0.w, 0.0f, 300.0f);
+      ImGui::Spacing();
+
+      static glm::vec2 wind_angles1 = {20,40};
+      ImGui::SliderFloat("Wind 2 X", &(wind_angles1[1]), 0, 360);
+      ImGui::SliderFloat("Wind 2 Y", &(wind_angles1[0]), -85, 85);
+      update_wind_direction(&(tfx_settings.wind1.x), wind_angles1);
+      ImGui::SliderFloat("Wind 2 force", &tfx_settings.wind1.w, 0.0f, 300.0f);
       ImGui::Unindent(section_indent);
     }
     INSERT_SPACING_HERE
@@ -139,15 +148,22 @@ void imgui_update (GlWindow& window, GlobalState& state) {
       ImGui::PushItemWidth(-50);
       glm::vec2 dim(-50.0, 50.0);
       glm::vec2 radius(0.0, 30.0);
+
       float* cc = &tfx_settings.collision_capsule0[0];
       ImGui::SliderFloat3("cc0.xyz", cc, dim[0], dim[1]);
       ImGui::SliderFloat("cc0.r", cc + 3, radius[0], radius[1]);
+      ImGui::Spacing();
+
       cc = &tfx_settings.collision_capsule1[0];
       ImGui::SliderFloat3("cc1.xyz", cc, dim[0], dim[1]);
       ImGui::SliderFloat("cc1.r", cc + 3, radius[0], radius[1]);
+      ImGui::Spacing();
+
       cc = &tfx_settings.collision_capsule2[0];
       ImGui::SliderFloat3("cc2.xyz", cc, dim[0], dim[1]);
       ImGui::SliderFloat("cc2.r", cc + 3, radius[0], radius[1]);
+      ImGui::Spacing();
+
       cc = &tfx_settings.collision_capsule3[0];
       ImGui::SliderFloat3("cc3.xyz", cc, dim[0], dim[1]);
       ImGui::SliderFloat("cc3.r", cc + 3, radius[0], radius[1]);

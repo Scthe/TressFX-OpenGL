@@ -27,7 +27,7 @@ void create_dummy_vao (GLuint& vao) {
 
 static void init_tfx_settings(GlobalState&, std::vector<Geometry>&, bool use_sintel);
 static void draw_bg (GlobalState&, const Shader&);
-static void draw_wind (GlobalState&, const Shader&);
+static void draw_wind (GlobalState&, const Shader&, glm::vec4);
 static void draw_debug_capsules(GlobalState&, const Shader&, const Geometry&);
 
 
@@ -104,15 +104,21 @@ int main(int argc, char *argv[]) {
     state.update_draw_params(clean_params);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    // scene
+
+    // scene and debug draws
+    if (state.tfx_settings.show_wind) {
+      draw_wind(state, wind_shader, state.tfx_settings.wind0);
+      draw_wind(state, wind_shader, state.tfx_settings.wind1);
+    }
     // we could use stencils to make it more optimized, but ./shrug
+    state.update_draw_params(clean_params);
     // draw_bg(state, bg_shader);
-    draw_wind(state, wind_shader);
     if (state.show_model) {
       for (auto& geo : scene_objects) {
         draw_geometry(state, scene_object_shader, geo);
       }
     }
+    state.update_draw_params(clean_params);
     if (state.show_collision_capsules) {
       draw_debug_capsules(state, capsule_debug_shader, capsule_debug_geo);
     }
@@ -154,6 +160,7 @@ void init_tfx_settings(GlobalState& state, std::vector<Geometry>& scene_objects,
 
   settings.root_color = {0.03, 0.07, 0.25, 1.0};
   settings.tip_color = {0.16, 0.45, 0.64, 0.2};
+  settings.show_wind = true;
 
   if (use_sintel) {
     // sintel
@@ -211,7 +218,7 @@ void draw_bg (GlobalState& state, const Shader& shader) {
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void draw_wind (GlobalState& state, const Shader& shader) {
+void draw_wind (GlobalState& state, const Shader& shader, glm::vec4 wind_dir4) {
   // shader & PSO
   glUseProgram(shader.gl_id);
   DrawParameters params;
@@ -221,8 +228,7 @@ void draw_wind (GlobalState& state, const Shader& shader) {
   // uniforms
   const auto& tfx_settings = state.tfx_settings;
   const auto& camera = state.camera;
-  const auto& sim_settings = tfx_settings.simulation_settings;
-  glm::vec3 wind_dir = { sim_settings.m_windDirection[0], sim_settings.m_windDirection[1], sim_settings.m_windDirection[2] };
+  glm::vec3 wind_dir = { wind_dir4.x, wind_dir4.y, wind_dir4.z };
   wind_dir = glm::normalize(wind_dir);
   glUtils::set_uniform(shader, "g_WindDirection", glm::vec4(wind_dir, 1.0), true);
   glUtils::set_uniform(shader, "g_Eye", state.camera.get_position(), true);

@@ -25,3 +25,13 @@ vec3 hsv2rgb(vec3 c) {
 	vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
 	return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
+
+const float GAMMA = 2.2;
+
+vec3 tonemapReinhard (vec3 color) {
+  return color / (color + vec3(1.0));
+}
+
+vec3 gammaFix (vec3 color, float gamma) {
+  return pow(color, vec3(1.0/gamma));
+}

@@ -51,13 +51,16 @@ static void update_uniforms_simulation (glUtils::Shader& shader, GlobalState& st
   auto& sim_s = settings.simulation_settings;
   f32 UNUSED = 0.0; i32 UNUSED_I = 0;
 
-  // GFX_FAIL("swap include in shaders! Modify mock step by step and see what comes. Start with gravity");
-  glm::vec3 wind_dir = { sim_s.m_windDirection[0], sim_s.m_windDirection[1], sim_s.m_windDirection[2] };
-  wind_dir = glm::normalize(wind_dir) * sim_s.m_windMagnitude;
-  glm::vec4 g_Wind = { wind_dir,  UNUSED };
-  glm::vec4 g_Wind1 = {0,0,0,0};
-  glm::vec4 g_Wind2 = {0,0,0,0};
-  glm::vec4 g_Wind3 = {0,0,0,0};
+  glm::vec3 wind_dir0 = {settings.wind0.x, settings.wind0.y, settings.wind0.z};
+  wind_dir0 = wind_dir0 * settings.wind0.w;
+  glm::vec3 wind_dir1 = {settings.wind1.x, settings.wind1.y, settings.wind1.z};
+  wind_dir1 = wind_dir1 * settings.wind1.w;
+
+  glm::vec4 g_Wind  = {wind_dir0, UNUSED};
+  glm::vec4 g_Wind1 = {wind_dir1, UNUSED};
+  glm::vec4 g_Wind2 = {0,0,0, UNUSED};
+  glm::vec4 g_Wind3 = {0,0,0, UNUSED};
+
   glm::vec4 g_Shape = {
     sim_s.m_damping,
     sim_s.m_localConstraintStiffness,

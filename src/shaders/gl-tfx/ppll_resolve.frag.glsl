@@ -53,7 +53,10 @@ void main () {
     float fac = clamp(float(depth) / MAX_DEBUG_LIST_DEPTH, 0, 1);
     ps_outputColor = vec4(mix(DEBUG_LIST_0, DEBUG_LIST_1, fac), 1);
   } else {
-    ps_outputColor = GatherLinkedList(gl_FragCoord.xy);
+    vec4 color = GatherLinkedList(gl_FragCoord.xy);
+    // ps_outputColor = vec4(gammaFix(tonemapReinhard(color.rgb), GAMMA), color.a);
+    // ps_outputColor = vec4(gammaFix(color.rgb, GAMMA), color.a);
+    ps_outputColor = vec4(color.rgb, color.a);
   }
 }
 

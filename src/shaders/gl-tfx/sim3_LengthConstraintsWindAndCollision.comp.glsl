@@ -71,35 +71,38 @@ void main() {
 
 
   // Wind
-  if (g_Wind.x != 0 || g_Wind.y != 0 || g_Wind.z != 0) { // compare on floats?!
     // only vertices 2nd and it's children, root and 1st ignore wind
-    if (vertData.vertexId >= 2 && vertData.vertexId < numVerticesInTheStrand - 1) {
-      // combining four winds.
-      float w1 = (float(vertData.strandId_global % 20))/20.0f; // rand(0:20) / 20
-      float w2 = 1.0f - w1;
-      vec3  windTotal = w1 * g_Wind.xyz
-                      + w2 * g_Wind1.xyz
-                      + w1 * g_Wind2.xyz
-                      + w2 * g_Wind3.xyz;
+  if (vertData.vertexId >= 2 && vertData.vertexId < numVerticesInTheStrand - 1) {
+    // combining four winds.
+    vec2 w = vec2 (
+      (float(vertData.strandId_global % 20))/20.0f, // rand(0:20) / 20
+      0.0
+    );
+    w.y = 1.0f - w.x;
+    w = w * 0.9 + 0.1; // try to make each wind affect strand at least some
+    vec3 windTotal =  w.x * g_Wind.xyz
+                    + w.y * g_Wind1.xyz
+                    + w.x * g_Wind2.xyz
+                    + w.y * g_Wind3.xyz;
+    windTotal += vec3(0.00001); // make it not panic during cross()
 
-      uint sharedIndex      = get_shared_index(vertData.vertexId    );
-      uint sharedIndex_next = get_shared_index(vertData.vertexId + 1);
-      // vector(next_vertex -> this_vertex), NOT NORMALIZED
-      vec3 from_next_vert = sharedPos[sharedIndex].xyz - sharedPos[sharedIndex_next].xyz;
-      // NOTE: had some weird stability issues when did cross on unnormalized
-      // vectors. Not sure wtf, but ain't gonna bother investigating
-      float force_mul = length(from_next_vert) * length(windTotal);
-      from_next_vert = normalize(from_next_vert);
-      windTotal = normalize(windTotal);
-      vec3 force = cross(cross(from_next_vert, windTotal), from_next_vert);
-      force *= force_mul;
-      // original code:
-      // vec3 v = sharedPos[sharedIndex].xyz - sharedPos[sharedIndex + numOfStrandsPerThreadGroup].xyz;
-      // vec3 force = -cross(cross(v, windTotal), v);
+    uint sharedIndex      = get_shared_index(vertData.vertexId    );
+    uint sharedIndex_next = get_shared_index(vertData.vertexId + 1);
+    // vector(next_vertex -> this_vertex), NOT NORMALIZED
+    vec3 from_next_vert = sharedPos[sharedIndex].xyz - sharedPos[sharedIndex_next].xyz;
+    // NOTE: had some weird stability issues when did cross on unnormalized
+    // vectors. Not sure wtf, but ain't gonna bother investigating
+    float force_mul = length(from_next_vert) * length(windTotal);
+    from_next_vert = normalize(from_next_vert);
+    windTotal = normalize(windTotal);
+    vec3 force = cross(cross(from_next_vert, windTotal), from_next_vert);
+    force *= force_mul;
+    // original code:
+    // vec3 v = sharedPos[sharedIndex].xyz - sharedPos[sharedIndex + numOfStrandsPerThreadGroup].xyz;
+    // vec3 force = -cross(cross(v, windTotal), v);
 
-      // apply wind
-      sharedPos[sharedIndex].xyz += force * g_TimeStep * g_TimeStep;
-    }
+    // apply wind
+    sharedPos[sharedIndex].xyz += force * g_TimeStep * g_TimeStep;
   }
   GroupMemoryBarrierWithGroupSync();
 
