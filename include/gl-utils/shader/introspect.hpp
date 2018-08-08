@@ -56,7 +56,7 @@ namespace glUtils {
      */
     GLuint gl_index;
 
-    // is 0 by default and managing it by hand is too complex
+    // is 0 by default and managing it by hand is quite complex
     GLuint gl_binding;
 
     /** size in bytes. Should match sizeof of c++, but may differ depending on packing and vec3 usage*/

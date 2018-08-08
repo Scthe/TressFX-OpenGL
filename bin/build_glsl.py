@@ -93,7 +93,6 @@ if __name__ == '__main__':
         has_error = has_error or not test_compile(out_path, after_processing)
         # break
 
-    print(Colors.YELLOW, "TODO Depth was mul *255", Colors.WHITE)
     if has_error:
         sys.exit(1)
     print()

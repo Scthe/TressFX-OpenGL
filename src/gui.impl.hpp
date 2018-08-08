@@ -73,12 +73,13 @@ void imgui_update (GlWindow& window, GlobalState& state) {
     if (ImGui::CollapsingHeader("Render", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Indent(section_indent);
       ImGui::Checkbox("Toggle model", &state.show_model);
-      ImGui::ColorEdit3("Hair color", (float*)&tfx_settings.root_color, color_flags);
-      ImGui::SliderFloat("Root opacity", (float*)&tfx_settings.root_color.a, 0.0f, 1.0f);
+      ImGui::ColorEdit3("Hair root color", (float*)&tfx_settings.root_color, color_flags);
       ImGui::ColorEdit3("Hair tip color", (float*)&tfx_settings.tip_color, color_flags);
-      ImGui::SliderFloat("Tip opacity", (float*)&tfx_settings.tip_color.a, 0.0f, 1.0f);
       ImGui::Checkbox("Use separate tip color", &tfx_settings.use_separate_tip_color);
       ImGui::SliderFloat("Color rand", &tfx_settings.strand_hue_rand_scale, 0.0f, 0.1f);
+      ImGui::SliderFloat("Root opacity", (float*)&tfx_settings.root_color.a, 0.0f, 1.0f);
+      ImGui::SliderFloat("Mid opacity", &tfx_settings.mid_alpha, 0.0f, 1.0f);
+      ImGui::SliderFloat("Tip opacity", (float*)&tfx_settings.tip_color.a, 0.0f, 1.0f);
       ImGui::SliderFloat("Hair tip split", &sim_settings.m_tipSeparation, 0.0f, 10.0f);
       ImGui::SliderFloat("Follow multip.", &tfx_settings.follow_hair_root_offset_multiplier, 0.0f, 1.5f);
       ADD_TOOLTIP("Increase distance between guide and follow hair");
@@ -123,7 +124,7 @@ void imgui_update (GlWindow& window, GlobalState& state) {
     // Simulation wind subtree
     if (ImGui::CollapsingHeader("Simulation wind", ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Indent(section_indent);
-      ImGui::Checkbox("show", &tfx_settings.show_wind);
+      ImGui::Checkbox("show wind", &tfx_settings.show_wind);
 
       static glm::vec2 wind_angles0 = {0,0};
       ImGui::SliderFloat("Wind 1 X", &(wind_angles0[1]), 0, 360);
@@ -144,7 +145,7 @@ void imgui_update (GlWindow& window, GlobalState& state) {
     // Collision capsules
     if (ImGui::CollapsingHeader("Collision capsules")) {
       ImGui::Indent(section_indent);
-      ImGui::Checkbox("show", &state.show_collision_capsules);
+      ImGui::Checkbox("show cc", &state.show_collision_capsules);
       ImGui::PushItemWidth(-50);
       glm::vec2 dim(-50.0, 50.0);
       glm::vec2 radius(0.0, 30.0);

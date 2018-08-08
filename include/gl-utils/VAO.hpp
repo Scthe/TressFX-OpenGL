@@ -16,12 +16,8 @@ namespace glUtils {
 
     VertexAttributeType type;
 
-    // Assigned location, this will be automatically assigned in create_vao
-    // as a simple increment. Do not use this for matrices (I was too lazy
-    // to handle manual location assignment)!
-    //
     // NOTE: if attribute is a matrix, this value refers to 1st column.
-    //       Additional 3 attributes (for mat4) will  be reserved for other columns
+    //       Additional 3 attributes (for mat4) will be reserved for other columns
     // NOTE: You may want to use 'in layout(location=X) T v' inside shader
     //
     // @see glBindAttribLocation(program.gl_id, location_to_set, "position")
@@ -45,7 +41,7 @@ namespace glUtils {
     //   then stride for both pos and uv is (sizeof(pos) + sizeof(uv)),
     //   as this is how much bytes is between each next vertex data
     // - when [pos1,pos2,...,posN,  uv1,uv2,...,uvN]
-    //   then offset for pos is sizeof(pos) and for uv is sizeof(uv)
+    //   then stride for pos is sizeof(pos) and for uv is sizeof(uv)
     u32 stride = 0;
   };
 

@@ -15,6 +15,7 @@ uniform vec4 g_MatBaseColor;
 uniform vec4 g_MatTipColor;
 uniform vec2 g_WinSize;
 uniform float g_ColorShiftScale;
+uniform float g_ColorMidAlpha;
 
 uniform int g_NumVerticesPerStrand;
 
@@ -62,7 +63,11 @@ vec3 RandomizeColorBasedOnStrand (uint strandId, vec3 color) {
 vec4 GetStrandColor(uint index, float vertex_position) {
   uint strandId = index / uint(g_NumVerticesPerStrand);
   vec4 baseColor = mix(g_MatTipColor, g_MatBaseColor, vertex_position);
-  return vec4(RandomizeColorBasedOnStrand(strandId, baseColor.rgb), baseColor.a);
+  float alpha = vertex_position < 0.5
+    ? mix(g_MatTipColor.a, g_ColorMidAlpha, vertex_position * 2.0)
+    : mix(g_ColorMidAlpha, g_MatBaseColor.a, (vertex_position - 0.5) * 2.0);
+
+  return vec4(RandomizeColorBasedOnStrand(strandId, baseColor.rgb), alpha);
 
   // simple:
   // return mix(g_MatTipColor, g_MatBaseColor, vertex_position);

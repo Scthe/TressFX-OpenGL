@@ -6,6 +6,7 @@
 // simplified shading for strands that are not in KBUFFER_SIZE of closest strands
 #ifndef TAIL_COMPRESS
 #define TAIL_COMPRESS 0
+// #define TAIL_COMPRESS 1
 #endif
 
 #ifndef TAIL_SHADING

@@ -72,6 +72,7 @@ namespace glTFx {
     glUtils::set_uniform(shader, "g_MatBaseColor", static_cast<glm::vec4>(settings.root_color), true);
     glm::vec4 tip_color = settings.use_separate_tip_color ? settings.tip_color : settings.root_color;
     glUtils::set_uniform(shader, "g_MatTipColor", static_cast<glm::vec4>(tip_color), true);
+    glUtils::set_uniform(shader, "g_ColorMidAlpha", settings.mid_alpha, true);
     glUtils::set_uniform(shader, "g_ColorShiftScale", settings.strand_hue_rand_scale, true);
     glUtils::set_uniform(shader, "g_WinSize", glm::vec2(state.win_width, state.win_height), true);
     glUtils::set_uniform(shader, "g_vEye", state.camera.get_position(), true);

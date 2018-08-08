@@ -15,7 +15,7 @@ bool CapsuleCollision(vec4 curPosition, inout vec3 newPosition, vec4 capsule) {
   vec3 delta1 = capsule.xyz - curPosition.xyz;
   if (dot(delta1, delta1) < radius1 * radius1) {
     vec3 n = normalize(-delta1);
-    newPosition = radius1 * n + capsule.xyz;
+    newPosition = radius1 * n + capsule.xyz; // :(
     return true;
   }
 

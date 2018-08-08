@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   create_shader(scene_object_shader, state.obj_vs, state.obj_fs);
   Shader capsule_debug_shader;
   create_shader(capsule_debug_shader, "src/shaders/capsule_debug.vert.glsl", "src/shaders/capsule_debug.frag.glsl");
-  auto capsule_debug_geo = create_geometry("assets/sintel_lite_v2_1/icosphere.obj");
+  auto capsule_debug_geo = create_geometry("assets/icosphere.obj");
 
   glClearColor(0.5, 0.5, 0.5, 0.5);
   glClearStencil(0);
@@ -158,8 +158,9 @@ void init_tfx_settings(GlobalState& state, std::vector<Geometry>& scene_objects,
   auto& settings = state.tfx_settings;
   auto& sim = settings.simulation_settings;
 
-  settings.root_color = {0.03, 0.07, 0.25, 1.0};
+  settings.root_color = {0.03, 0.07, 0.25, 0.7};
   settings.tip_color = {0.16, 0.45, 0.64, 0.2};
+  settings.mid_alpha = 1.0;
   settings.show_wind = true;
 
   if (use_sintel) {
@@ -184,7 +185,7 @@ void init_tfx_settings(GlobalState& state, std::vector<Geometry>& scene_objects,
     // collision capsules
     settings.collision_capsule0 = glm::vec4(0, 36.65, -1.3,  9.27);
     settings.collision_capsule1 = glm::vec4(0, 35.81, 2.38,  8.97);
-    settings.collision_capsule2 = glm::vec4(0, 26.56, 2.75,  7.89);
+    settings.collision_capsule2 = glm::vec4(0, 26.56, 2.75,  8.89);
 
   } else {
     // mohawk - AMD standard model
@@ -226,7 +227,6 @@ void draw_wind (GlobalState& state, const Shader& shader, glm::vec4 wind_dir4) {
   state.update_draw_params(params);
 
   // uniforms
-  const auto& tfx_settings = state.tfx_settings;
   const auto& camera = state.camera;
   glm::vec3 wind_dir = { wind_dir4.x, wind_dir4.y, wind_dir4.z };
   wind_dir = glm::normalize(wind_dir);
