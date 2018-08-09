@@ -130,7 +130,7 @@ void imgui_update (GlWindow& window, GlobalState& state) {
       ImGui::SliderFloat("Wind 1 X", &(wind_angles0[1]), 0, 360);
       ImGui::SliderFloat("Wind 1 Y", &(wind_angles0[0]), -85, 85);
       update_wind_direction(&(tfx_settings.wind0.x), wind_angles0);
-      ImGui::SliderFloat("Wind 1 force", &tfx_settings.wind0.w, 0.0f, 300.0f);
+      ImGui::SliderFloat("Wind 1 force", &tfx_settings.wind0.w, 0.0f, 600.0f);
       ImGui::Spacing();
 
       static glm::vec2 wind_angles1 = {20,40};

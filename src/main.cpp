@@ -169,10 +169,13 @@ void init_tfx_settings(GlobalState& state, std::vector<Geometry>& scene_objects,
     settings.object_name = "sintel_hair";
     settings.filepath = "assets\\sintel_lite_v2_1\\GEO-sintel_hair_emit.001-sintel_hair.tfx";
     // settings.filepath = "assets\\sintel_lite_v2_1\\0TestHair-TestHair.tfx";
-    settings.hair_thickness = 0.28;
+    settings.hair_thickness = 0.2;
+    settings.hair_thickness_at_tip_ratio = 0.01;
     sim.m_tipSeparation = 2.1;
     sim.m_gravityMagnitude = 0.0f;
     sim.m_damping = 0.0f;
+    sim.m_localConstraintStiffness = 0.78;
+    settings.follow_hairs_per_guide_hair = 8;
     settings.follow_hair_root_offset_multiplier = 1.2;
     // model matrix
     glm::mat4 m(1);
