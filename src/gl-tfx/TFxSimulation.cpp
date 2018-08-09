@@ -58,7 +58,7 @@ namespace glTFx {
     glUtils::destroy(shader_sim4_UpdateFollowHairVertices);
   }
 
-  void TFxSimulation::start_simulation(double fTime, std::vector<TFxHairStrands*>& hairStrands) {
+  void TFxSimulation::start_simulation(double /*fTime*/, std::vector<TFxHairStrands*>& hairStrands) {
     // SuCommandListPtr pSimCommandList = m_ComputeQueue.GetComputeCommandList();
     // EI_CommandContextRef simContext = (EI_CommandContextRef)pSimCommandList;
     EI_CommandContextRef simContext = GetContext();
