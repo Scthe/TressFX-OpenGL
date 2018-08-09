@@ -17,13 +17,17 @@ bin/glslcompiler
 *.trace
 *.cap
 
-# models etc. - too big!
-assets/*
-!assets/sintel_lite_v2_1
-assets/sintel_lite_v2_1/*
-!assets/sintel_lite_v2_1/tfx_exporter.py
+# assets - sintel
+assets/sintel_lite_v2_1/*.blend
+assets/sintel_lite_v2_1/textures/*
+assets/sintel_lite_v2_1/backup/*
 
-imgui.ini
+# assets - Ratboy
+assets/Ratboy/*.tfxbone
+assets/Ratboy/Ratboy_body.tfxmesh
+assets/Ratboy/Ratboy_left_hand.tfxmesh
+assets/Ratboy/Ratboy_right_hand.tfxmesh
+assets/Ratboy/Ratboy_short.tfx
 
 # PDFs / AMD repo etc.
 tressfx-reference
@@ -31,5 +35,8 @@ libs/amd_tressfx/src/Shaders
 
 # misc
 src/shaders/generated
+imgui.ini
+gh-images
+
 # not used ATM
 libs/stb/
