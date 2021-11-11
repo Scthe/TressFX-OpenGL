@@ -2,7 +2,8 @@
 
 Direct port of AMD's TressFX hair/fur rendering and simulation technology to OpenGL.
 
-![gif was supposed to be here. Write me an email, so I can fix this](https://media.giphy.com/media/5dWEuK54XUOWDna6IX/giphy.gif)
+https://user-images.githubusercontent.com/9325337/141370944-40f065f2-36d4-46d5-bdc3-a16741b210d8.mov
+
 
 *360 view of Sintel's model. Unfortunately, Sintel is not the greatest example to demonstrate TressFX on. Read more in FAQ part of this readme!*
 
@@ -29,6 +30,10 @@ Due to time constraints following techniques are not yet implemented:
 * [Cyrill Crassin's PPLL OIT improvements](http://blog.icare3d.org/2010/07/opengl-40-abuffer-v20-linked-lists-of.html)
 
 There might be still a few bugs that I will hopefully get rid off when I have a little bit more spare time.
+
+
+
+https://user-images.githubusercontent.com/9325337/141371009-a77f7e67-4d58-4553-9863-7a231255082f.mov
 
 
 
