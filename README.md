@@ -2,22 +2,20 @@
 
 Direct port of AMD's TressFX hair/fur rendering and simulation technology to OpenGL.
 
-https://user-images.githubusercontent.com/9325337/141370944-40f065f2-36d4-46d5-bdc3-a16741b210d8.mov
+
+
+https://github.com/Scthe/TressFX-OpenGL/assets/9325337/0e6c5b6f-c7b3-43f6-8f1e-bf5137a9c87a
+
 
 
 *360 view of Sintel's model. Unfortunately, Sintel is not the greatest example to demonstrate TressFX on. Read more in FAQ part of this readme!*
-
-**webms** (refresh with shift a couple of times if it says that webm is corrupted - github does not like this kind of content):
-
-  * [higher res of gif above](https://raw.githubusercontent.com/Scthe/scthe.github.io/tressfx-webm/images/2018-08-09-tressfx-opengl/1_360.webm)
-  * [playing with wind strength](https://raw.githubusercontent.com/Scthe/scthe.github.io/tressfx-webm/images/2018-08-09-tressfx-opengl/2_wind.webm)
 
 
 ## What is this?
 
 [TressFX](//en.wikipedia.org/wiki/TressFX) is AMD's library used for simulation and rendering of hair. It has been used in commercial games like newest Tomb Raider titles and Deus Ex: Mankind Divided. The library itself is [open source](//github.com/GPUOpen-Effects/TressFX) under GPUOpen initiative. Please visit provided links to get more details.
 
-AMD's version of TressFX uses HLSL (DirectX's shading language) and the Sushi framework. It also provides fill-the-gaps library that is independent of the rest of the source code ([includes](https://github.com/GPUOpen-Effects/TressFX/tree/master/amd_tressfx/inc), [source](https://github.com/GPUOpen-Effects/TressFX/tree/master/amd_tressfx/src)). The main focus of my project was to provide the implementation for various methods that are needed to render and simulate hair using OpenGL and GLSL. I tried to stick to AMD's version as closely as possible, even if it would have been easier to just write everything from grounds up.
+AMD's version of TressFX uses HLSL (DirectX's shading language) and the Sushi framework. It also provides [fill-the-gaps library](https://github.com/GPUOpen-Effects/TressFX/tree/master/src/TressFX) that is independent of the rest of the source code. The main focus of my project was to provide the implementation for various methods that are needed to render and simulate hair using OpenGL and GLSL. I tried to stick to AMD's version as closely as possible, even if it would have been easier to just write everything from grounds up.
 
 Due to time constraints following techniques are not yet implemented:
 
@@ -33,7 +31,11 @@ There might be still a few bugs that I will hopefully get rid off when I have a 
 
 
 
-https://user-images.githubusercontent.com/9325337/141371009-a77f7e67-4d58-4553-9863-7a231255082f.mov
+
+
+https://github.com/Scthe/TressFX-OpenGL/assets/9325337/45fae226-db84-4baf-899e-4656bd4c2b09
+
+
 
 
 
